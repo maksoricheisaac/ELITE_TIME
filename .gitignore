@@ -18,10 +18,15 @@
 .env.test.local
 .env.enc
 
-# Scripts de migration prod↔local — contiennent la logique de déchiffrement
-# Ne JAMAIS exposer dans un repo public ou privé partagé
+# Scripts ops prod/local — contiennent credentials et logique sensible
+# Ne JAMAIS versionner : lisent DATABASE_URL, manipulent PGPASSWORD, accèdent à la prod
 scripts/decrypt-export.ts
 scripts/encrypt-import.ts
+scripts/dump-prod.ps1
+scripts/setup-local-db.ps1
+
+# Dumps SQL générés — peuvent contenir la structure complète de la prod
+scripts/dumps/
 
 # Certificats et clés privées
 *.pem
