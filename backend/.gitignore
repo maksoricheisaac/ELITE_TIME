@@ -3,8 +3,8 @@
 /node_modules
 /build
 
-# Logs
-logs
+# Logs d'application (à la racine de backend/ uniquement — pas src/logs/ qui est un module NestJS)
+/logs
 *.log
 npm-debug.log*
 pnpm-debug.log*

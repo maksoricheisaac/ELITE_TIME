@@ -71,7 +71,7 @@ generated/
 
 # ── LOGS & MONITORING ──────────────────────────────────────────────────────────
 # Logs d'application et PM2 — peuvent contenir des données sensibles en clair
-logs/
+# ⚠️  Ne pas mettre "logs/" seul : bloquerait backend/src/logs/ (module NestJS)
 frontend/logs/
 backend/logs/
 *.log
