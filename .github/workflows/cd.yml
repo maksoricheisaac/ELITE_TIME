@@ -1,0 +1,161 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# CD — Déploiement Continu EliteTime
+# Fichier : .github/workflows/cd.yml
+#
+# DÉCLENCHEUR :
+#   - Push sur main uniquement (après merge d'une Pull Request approuvée)
+#
+# ÉTAPES : Vérification pré-déploiement → Déploiement SSH → Health check
+#
+# SECRETS GITHUB À CONFIGURER AVANT D'ACTIVER CE PIPELINE :
+#   (Settings → Secrets and variables → Actions → New repository secret)
+#
+#   SSH_HOST          → IP ou hostname du serveur Windows de production
+#                       Exemple : 10.0.100.10 ou elitetime.elitenetwork.local
+#   SSH_USERNAME      → Nom d'utilisateur SSH sur le serveur
+#                       Exemple : administrator ou elitetime-deploy
+#   SSH_PRIVATE_KEY   → Contenu de la clé privée SSH dédiée au déploiement
+#                       (clé générée spécifiquement pour GitHub Actions — jamais ta clé perso)
+#                       Générer une paire de clés dédiée :
+#                         ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/elitetime_deploy
+#                         → SSH_PRIVATE_KEY = contenu de ~/.ssh/elitetime_deploy (clé privée)
+#                         → Ajouter ~/.ssh/elitetime_deploy.pub dans authorized_keys du serveur
+#   SSH_PORT          → Port SSH du serveur (22 par défaut)
+#
+# ⚠️  Ce pipeline se connecte en SSH au serveur de PRODUCTION.
+#     Tester d'abord manuellement la connexion SSH depuis ta machine
+#     avant d'activer ce pipeline.
+# ══════════════════════════════════════════════════════════════════════════════
+
+name: CD — Déploiement Production
+
+on:
+  push:
+    branches:
+      - main  # Se déclenche UNIQUEMENT quand un commit atterrit sur main (merge de PR)
+
+jobs:
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 1 — VÉRIFICATION PRÉ-DÉPLOIEMENT
+  # Affiche les informations du commit déployé pour traçabilité dans les logs.
+  # Cette traçabilité permet de savoir exactement quelle version est en prod.
+  # ════════════════════════════════════════════════════════════════════════════
+  pre-deploy-check:
+    name: Vérification pré-déploiement
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1  # Un seul commit suffit pour afficher les infos de traçabilité
+
+      - name: Afficher les informations du commit déployé
+        run: |
+          # Afficher le SHA complet du commit — utilisé comme référence de version déployée
+          echo "=== DÉPLOIEMENT EN COURS ==="
+          echo "SHA du commit : ${{ github.sha }}"
+          echo "Auteur        : ${{ github.actor }}"
+          echo "Message       : $(git log -1 --format='%s')"
+          echo "Date          : $(git log -1 --format='%ci')"
+          echo "Branche       : ${{ github.ref_name }}"
+          echo "============================"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 2 — DÉPLOIEMENT SSH
+  # Se connecte au serveur Windows via SSH et exécute le déploiement.
+  # Attend que la vérification pré-déploiement soit passée.
+  # ════════════════════════════════════════════════════════════════════════════
+  deploy:
+    name: Déploiement sur le serveur de production
+    runs-on: ubuntu-latest
+    needs: pre-deploy-check  # Ce job ne démarre QUE si pre-deploy-check est passé
+
+    steps:
+      - name: Connexion SSH et déploiement
+        uses: appleboy/ssh-action@v1.0.3  # Action officielle pour exécuter des commandes SSH à distance
+        with:
+          host: ${{ secrets.SSH_HOST }}            # IP ou hostname du serveur cible
+          username: ${{ secrets.SSH_USERNAME }}    # Utilisateur SSH
+          key: ${{ secrets.SSH_PRIVATE_KEY }}      # Clé privée SSH (contenu du fichier id_ed25519)
+          port: ${{ secrets.SSH_PORT }}            # Port SSH (22 par défaut)
+          # script : séquence de commandes exécutées sur le serveur distant via SSH
+          # Chaque ligne est exécutée dans le même shell ; un échec arrête le script
+          script: |
+            # Se placer à la racine du projet EliteTime
+            cd C:/APPS/ELITE_TIME
+
+            # Récupérer les dernières modifications depuis la branche main
+            # git pull utilise les credentials configurés sur le serveur (SSH key ou HTTPS token)
+            git pull origin main
+
+            # ── Mise à jour du BACKEND ──────────────────────────────────────
+            cd C:/APPS/ELITE_TIME/backend
+
+            # Installer uniquement les dépendances de production (pas les devDependencies)
+            # npm ci --omit=dev est plus strict et plus rapide que npm install en prod
+            npm ci --omit=dev
+
+            # Recompiler le TypeScript → regénère backend/dist/
+            # Nécessaire car les sources ont changé après git pull
+            npm run build
+
+            # ── Mise à jour du FRONTEND ─────────────────────────────────────
+            cd C:/APPS/ELITE_TIME/frontend
+
+            # Installer les dépendances frontend de production
+            npm ci --omit=dev
+
+            # Recompiler Next.js → regénère frontend/.next/
+            npm run build
+
+            # ── Redémarrage des processus PM2 ───────────────────────────────
+            # Retour à la racine où se trouve ecosystem.config.js
+            cd C:/APPS/ELITE_TIME
+
+            # Redémarrer le backend NestJS avec le nouveau build
+            # pm2 restart utilise le nom défini dans ecosystem.config.js
+            pm2 restart elitetime-backend
+
+            # Redémarrer le frontend Next.js avec le nouveau build
+            pm2 restart elitetime-frontend
+
+            # Sauvegarder l'état PM2 → les processus redémarreront automatiquement
+            # après un reboot du serveur
+            pm2 save
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 3 — VÉRIFICATION POST-DÉPLOIEMENT (HEALTH CHECK)
+  # Attend que PM2 ait démarré les processus, puis vérifie que l'API répond.
+  # Attend que le déploiement soit terminé.
+  # ════════════════════════════════════════════════════════════════════════════
+  health-check:
+    name: Vérification post-déploiement (health check)
+    runs-on: ubuntu-latest
+    needs: deploy  # Ce job ne démarre QUE si le déploiement SSH est terminé sans erreur
+
+    steps:
+      - name: Attendre le démarrage des processus PM2
+        # PM2 a besoin de quelques secondes pour redémarrer NestJS + Next.js
+        # 15 secondes est suffisant pour un démarrage normal en production
+        run: sleep 15
+
+      - name: Health check — Vérifier que l'API backend répond
+        # curl fait une requête HTTP GET sur l'endpoint de santé du backend NestJS
+        # --fail    : retourne un code d'erreur si le code HTTP est >= 400
+        # --silent  : pas d'affichage de la barre de progression
+        # --max-time 10 : timeout de 10 secondes (évite d'attendre indéfiniment)
+        # En cas d'échec, on affiche une alerte mais on ne fait PAS de rollback automatique
+        # (un rollback automatique sans tests approfondis est plus risqué qu'une alerte)
+        run: |
+          if curl --fail --silent --max-time 10 http://${{ secrets.SSH_HOST }}/api; then
+            echo "✅ Health check réussi — backend opérationnel"
+          else
+            echo "⚠️  Health check échoué — vérifier les logs PM2 sur le serveur :"
+            echo "   pm2 logs elitetime-backend --lines 50"
+            echo "   pm2 logs elitetime-frontend --lines 50"
+            # exit 1 commenté volontairement — on alerte sans bloquer le pipeline
+            # Décommenter 'exit 1' pour rendre le health check bloquant :
+            # exit 1
+          fi

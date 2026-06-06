@@ -1,0 +1,141 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Security Scan Hebdomadaire — EliteTime
+# Fichier : .github/workflows/security-scan.yml
+#
+# DÉCLENCHEURS :
+#   - Automatiquement chaque lundi à 08h00 UTC (09h00 heure de Paris en hiver,
+#     10h00 en été — adapter le cron si nécessaire)
+#   - Manuellement via le bouton "Run workflow" sur GitHub
+#     (Actions → Security Scan Hebdomadaire → Run workflow)
+#
+# Ce pipeline ne fait PAS échouer le build sur les vulnérabilités.
+# Il les affiche pour information — les corrections sont faites manuellement.
+#
+# AUCUN SECRET NÉCESSAIRE pour ce pipeline.
+# ══════════════════════════════════════════════════════════════════════════════
+
+name: Security Scan Hebdomadaire
+
+on:
+  schedule:
+    # Syntaxe cron : minute heure jour_du_mois mois jour_de_la_semaine
+    # 0 8 * * 1 = à 08:00 UTC chaque lundi (jour 1 de la semaine)
+    - cron: '0 8 * * 1'
+
+  workflow_dispatch:
+    # Permet de déclencher ce pipeline manuellement depuis GitHub
+    # GitHub → Actions → Security Scan Hebdomadaire → Run workflow
+
+jobs:
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 1 — AUDIT DES DÉPENDANCES BACKEND
+  # npm audit analyse package-lock.json et détecte les vulnérabilités connues
+  # dans les bibliothèques utilisées par NestJS.
+  # ════════════════════════════════════════════════════════════════════════════
+  audit-backend:
+    name: Audit dépendances backend (npm audit)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code source
+        uses: actions/checkout@v4
+
+      - name: Configurer Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Installer les dépendances backend
+        working-directory: backend
+        run: npm ci  # Installation propre depuis package-lock.json
+
+      - name: Audit de sécurité backend — HIGH et CRITICAL uniquement
+        working-directory: backend
+        # --audit-level=high : afficher uniquement les vulnérabilités HIGH et CRITICAL
+        # || true : ne pas faire échouer le pipeline — afficher uniquement pour information
+        # L'objectif est d'informer, pas de bloquer les déploiements sur des vulnérabilités
+        # qui peuvent nécessiter des tests avant d'être patchées
+        run: |
+          echo "=== AUDIT SÉCURITÉ BACKEND — VULNÉRABILITÉS HIGH & CRITICAL ==="
+          npm audit --audit-level=high || true
+          echo ""
+          echo "=== RAPPORT COMPLET (toutes sévérités) ==="
+          npm audit --json | npx --yes node -e "
+            const data = require('fs').readFileSync('/dev/stdin', 'utf8');
+            const audit = JSON.parse(data);
+            const vulns = audit.vulnerabilities || {};
+            const counts = { info: 0, low: 0, moderate: 0, high: 0, critical: 0 };
+            Object.values(vulns).forEach(v => { if (counts[v.severity] !== undefined) counts[v.severity]++; });
+            console.log('Résumé:', JSON.stringify(counts, null, 2));
+          " || true
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 2 — AUDIT DES DÉPENDANCES FRONTEND
+  # Même logique que pour le backend, appliquée aux dépendances Next.js.
+  # Tourne en parallèle de l'audit backend (pas de dépendance entre les deux).
+  # ════════════════════════════════════════════════════════════════════════════
+  audit-frontend:
+    name: Audit dépendances frontend (npm audit)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code source
+        uses: actions/checkout@v4
+
+      - name: Configurer Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Installer les dépendances frontend
+        working-directory: frontend
+        run: npm ci
+
+      - name: Audit de sécurité frontend — HIGH et CRITICAL uniquement
+        working-directory: frontend
+        run: |
+          echo "=== AUDIT SÉCURITÉ FRONTEND — VULNÉRABILITÉS HIGH & CRITICAL ==="
+          npm audit --audit-level=high || true
+          echo ""
+          echo "=== RAPPORT COMPLET (toutes sévérités) ==="
+          npm audit --json | npx --yes node -e "
+            const data = require('fs').readFileSync('/dev/stdin', 'utf8');
+            const audit = JSON.parse(data);
+            const vulns = audit.vulnerabilities || {};
+            const counts = { info: 0, low: 0, moderate: 0, high: 0, critical: 0 };
+            Object.values(vulns).forEach(v => { if (counts[v.severity] !== undefined) counts[v.severity]++; });
+            console.log('Résumé:', JSON.stringify(counts, null, 2));
+          " || true
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 3 — SCAN GITLEAKS (HISTORIQUE GIT COMPLET)
+  # Analyse tous les commits de l'historique pour détecter des secrets qui
+  # auraient pu être commités accidentellement par le passé.
+  # ════════════════════════════════════════════════════════════════════════════
+  gitleaks-scan:
+    name: Scan secrets dans l'historique (Gitleaks)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer tout l'historique git
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # OBLIGATOIRE : fetch-depth: 0 récupère tous les commits
+                          # Sans cela, Gitleaks ne peut scanner que le dernier commit
+
+      - name: Scanner les secrets avec Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Token automatique GitHub pour l'API Gitleaks
+        # Gitleaks analyse chaque commit de l'historique et détecte des patterns
+        # de secrets (clés API, mots de passe, tokens JWT, etc.)
+        # La liste des patterns est maintenue par l'équipe Gitleaks (mise à jour régulière)
+        # Si un secret est détecté, ce step échoue et affiche le fichier + commit concernés
+        # Dans ce pipeline hebdomadaire, on continue malgré l'erreur (|| true ci-dessous)
+        # Pour le pipeline CI en temps réel (ci.yml), l'échec est bloquant
+        continue-on-error: true  # Ne pas bloquer le rapport hebdomadaire — juste signaler

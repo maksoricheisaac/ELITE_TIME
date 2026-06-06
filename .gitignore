@@ -1,0 +1,156 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# .gitignore EliteTime — DevSecOps strict
+# Généré suite à l'audit complet du 2026-06-06
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── SECRETS & CONFIGURATION SENSIBLE ──────────────────────────────────────────
+# Contiennent : DATABASE_URL, ENCRYPTION_KEY, LDAP_PWD, AZURE_CLIENT_SECRET,
+# SMTP_PASS, INTERNAL_SOCKET_TOKEN — ne JAMAIS versionner
+.env
+.env.*
+.env.local
+.env.development
+.env.development.local
+.env.production
+.env.production.local
+.env.staging
+.env.test
+.env.test.local
+.env.enc
+
+# Scripts de migration prod↔local — contiennent la logique de déchiffrement
+# Ne JAMAIS exposer dans un repo public ou privé partagé
+scripts/decrypt-export.ts
+scripts/encrypt-import.ts
+
+# Certificats et clés privées
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+*.cer
+elitetime-cert.cer
+
+# ── DONNÉES SENSIBLES ──────────────────────────────────────────────────────────
+# Données RH en clair — sensible RGPD, durée de vie minimale
+elitetime-data-plain.json
+
+# Dumps et backups de base de données — peuvent contenir des données chiffrées
+# ou en clair selon le contexte d'export.
+# ⚠️  NE PAS exclure backend/prisma/migrations/ — ce sont des migrations de schéma
+#     versionnées intentionnellement (pas de données sensibles dedans)
+*.dump
+*.backup
+*.bak
+scripts/backups/
+
+# Dumps de données uniquement (pas les migrations Prisma)
+*.sql.gz
+elitetime-*.sql
+dump-*.sql
+
+# ── BUILD & DÉPENDANCES ────────────────────────────────────────────────────────
+# Artefacts générés — reconstruits via npm run build, ne pas versionner
+# (augmentent inutilement la taille du repo et masquent les diffs réels)
+frontend/.next/
+frontend/out/
+frontend/build/
+backend/dist/
+backend/build/
+
+# Dépendances npm — installées via npm install, ne pas versionner
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Client Prisma généré — recréé via npx prisma generate
+backend/src/generated/
+frontend/src/generated/
+generated/
+
+# ── LOGS & MONITORING ──────────────────────────────────────────────────────────
+# Logs d'application et PM2 — peuvent contenir des données sensibles en clair
+logs/
+frontend/logs/
+backend/logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Données runtime PM2
+.pm2/
+
+# ── FICHIERS INUTILISÉS & ARTEFACTS DÉTECTÉS EN MISSION 1 ─────────────────────
+# Build TypeScript intermédiaire
+*.tsbuildinfo
+backend/tsconfig.build.tsbuildinfo
+
+# Répertoire Windsurf IDE (détecté dans frontend/.gitignore existant)
+.windsurf/
+frontend/.windsurf/
+
+# Répertoire temporaire Next.js
+.next-build/
+frontend/.next-build/
+
+# ── IDE & SYSTÈME ──────────────────────────────────────────────────────────────
+# Fichiers système macOS
+.DS_Store
+**/.DS_Store
+
+# Fichiers système Windows
+Thumbs.db
+Desktop.ini
+
+# VSCode — settings locaux uniquement (extensions et tasks peuvent être versionnés)
+.vscode/settings.json
+.vscode/*.code-workspace
+
+# IntelliJ / WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.launch
+
+# Vim/Emacs
+*.swp
+*.swo
+*~
+
+# ── TESTS & COUVERTURE ────────────────────────────────────────────────────────
+# Rapports de couverture — générés en CI, pas à versionner
+coverage/
+.nyc_output/
+
+# ── RUNTIME ───────────────────────────────────────────────────────────────────
+# PID files — générés au démarrage des processus
+pids/
+*.pid
+*.seed
+*.pid.lock
+.temp
+.tmp
+
+# Rapports de diagnostic Node.js
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# ── DÉPLOIEMENT ───────────────────────────────────────────────────────────────
+# Vercel (si migration cloud future)
+.vercel
+
+# Variables Yarn 2+
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+.pnp.*

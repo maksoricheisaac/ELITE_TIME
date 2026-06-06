@@ -1,0 +1,168 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# CI — Intégration Continue EliteTime
+# Fichier : .github/workflows/ci.yml
+#
+# DÉCLENCHEURS :
+#   - Push sur develop ou toute branche feature/*
+#   - Pull Request vers main ou develop
+#
+# ÉTAPES : Scan sécurité → Build backend → Build frontend → Validation Prisma
+#
+# SECRETS GITHUB À CONFIGURER AVANT D'ACTIVER CE PIPELINE :
+#   (Settings → Secrets and variables → Actions → New repository secret)
+#
+#   DATABASE_URL_TEST   → URL PostgreSQL de test (JAMAIS la base de prod)
+#                         Exemple : postgresql://user:pass@localhost:5432/elitetime_test
+#   ENCRYPTION_KEY_TEST → Clé AES-256 fictive pour les tests uniquement (64 chars hex)
+#                         Générer : node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+#
+# ⚠️  Ces secrets ne sont JAMAIS les valeurs de production.
+#     Créer une base de données de test dédiée (distincte de la prod).
+# ══════════════════════════════════════════════════════════════════════════════
+
+name: CI — Intégration Continue
+
+on:
+  push:
+    branches:
+      - develop          # Se déclenche sur chaque push vers develop
+      - 'feature/**'     # Se déclenche sur chaque push vers n'importe quelle branche feature/*
+  pull_request:
+    branches:
+      - main             # Se déclenche quand une PR est ouverte vers main
+      - develop          # Se déclenche quand une PR est ouverte vers develop
+
+jobs:
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 1 — SCAN DE SÉCURITÉ
+  # Vérifie qu'aucun secret (clé API, mot de passe, token) n'a été commité
+  # accidentellement dans le code. Doit passer avant toute autre étape.
+  # ════════════════════════════════════════════════════════════════════════════
+  security-scan:
+    name: Scan de sécurité (Gitleaks)
+    runs-on: ubuntu-latest  # Exécution sur un runner Ubuntu hébergé par GitHub
+
+    steps:
+      - name: Récupérer le code source
+        uses: actions/checkout@v4  # Clone le repo dans l'environnement CI
+        with:
+          fetch-depth: 0  # fetch-depth: 0 = récupérer tout l'historique git (requis par Gitleaks pour scanner chaque commit)
+
+      - name: Scanner les secrets avec Gitleaks
+        uses: gitleaks/gitleaks-action@v2  # Action officielle Gitleaks sur le marketplace GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Token automatique GitHub, nécessaire pour l'API Gitleaks
+        # Si Gitleaks détecte un secret dans le code ou l'historique,
+        # ce step échoue avec exit code 1 → le pipeline s'arrête immédiatement
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 2 — BUILD BACKEND (NestJS)
+  # Compile le backend TypeScript → vérifie qu'il n'y a pas d'erreurs de type
+  # ou d'import manquant. Nécessite que le scan sécurité soit passé.
+  # ════════════════════════════════════════════════════════════════════════════
+  build-backend:
+    name: Build Backend (NestJS)
+    runs-on: ubuntu-latest
+    needs: security-scan  # Ce job ne démarre QUE si security-scan est passé (vert)
+
+    steps:
+      - name: Récupérer le code source
+        uses: actions/checkout@v4
+
+      - name: Configurer Node.js 20
+        uses: actions/setup-node@v4  # Action officielle pour installer Node.js
+        with:
+          node-version: '20'         # Version LTS recommandée pour NestJS
+          cache: 'npm'               # Met en cache node_modules pour accélérer les prochains builds
+          cache-dependency-path: backend/package-lock.json  # Fichier de lock utilisé comme clé de cache
+
+      - name: Installer les dépendances backend
+        working-directory: backend   # Toutes les commandes suivantes s'exécutent dans backend/
+        run: npm ci                  # npm ci = installation propre depuis package-lock.json (plus strict que npm install)
+
+      - name: Générer le client Prisma
+        working-directory: backend
+        run: npx prisma generate     # Génère backend/src/generated/prisma/ requis par la compilation TypeScript
+        env:
+          # DATABASE_URL requis par prisma generate même si on ne se connecte pas à une vraie DB
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+
+      - name: Compiler le backend TypeScript
+        working-directory: backend
+        run: npm run build           # Exécute tsc -p tsconfig.build.json → produit backend/dist/
+        env:
+          NODE_ENV: test             # Évite d'activer des comportements spécifiques à la production
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY_TEST }}  # Clé fictive requise pour que le module crypto compile sans erreur
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 3 — BUILD FRONTEND (Next.js)
+  # Compile le frontend Next.js → vérifie types TypeScript et routes.
+  # Tourne en parallèle du build backend (pas de dépendance entre eux).
+  # ════════════════════════════════════════════════════════════════════════════
+  build-frontend:
+    name: Build Frontend (Next.js)
+    runs-on: ubuntu-latest
+    needs: security-scan  # Attend uniquement que le scan sécurité soit passé
+
+    steps:
+      - name: Récupérer le code source
+        uses: actions/checkout@v4
+
+      - name: Configurer Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Installer les dépendances frontend
+        working-directory: frontend
+        run: npm ci
+
+      - name: Compiler le frontend Next.js
+        working-directory: frontend
+        run: npm run build           # next build → vérifie types, optimise les pages, génère frontend/.next/
+        env:
+          NODE_ENV: production        # Next.js optimise le build en mode production
+          # Variables publiques minimales pour que le build réussisse sans accès réseau
+          NEXT_PUBLIC_API_URL: http://localhost:4000/api
+          NEXT_PUBLIC_SOCKET_URL: http://localhost:4000
+          API_URL: http://localhost:4000/api
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY_TEST }}
+          # Les autres variables (LDAP, Azure, etc.) ne sont pas nécessaires au build statique
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # JOB 4 — VALIDATION SCHÉMA PRISMA
+  # Vérifie que schema.prisma est syntaxiquement correct et cohérent.
+  # Tourne après le build backend (qui génère le client Prisma).
+  # ════════════════════════════════════════════════════════════════════════════
+  validate-prisma:
+    name: Validation schéma Prisma
+    runs-on: ubuntu-latest
+    needs: build-backend  # Attend que le build backend (et donc prisma generate) soit passé
+
+    steps:
+      - name: Récupérer le code source
+        uses: actions/checkout@v4
+
+      - name: Configurer Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Installer les dépendances backend
+        working-directory: backend
+        run: npm ci
+
+      - name: Valider le schéma Prisma
+        working-directory: backend
+        run: npx prisma validate      # Vérifie la syntaxe et la cohérence de prisma/schema.prisma
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+        # Cette étape échoue si :
+        #   - Le schéma contient des erreurs de syntaxe
+        #   - Des relations incohérentes sont définies
+        #   - Des types inconnus sont utilisés

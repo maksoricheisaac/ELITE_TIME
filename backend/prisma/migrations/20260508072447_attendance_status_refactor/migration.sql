@@ -1,0 +1,1 @@
+-- Migration déjà appliquée. Stub de synchronisation.

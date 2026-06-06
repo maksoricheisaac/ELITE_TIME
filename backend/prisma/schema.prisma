@@ -1,0 +1,338 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                          String                       @id @default(cuid())
+  email                       String?                      @unique
+  username                    String                       @unique
+  role                        UserRole                     @default(employee)
+  department                  String?
+  position                    String?
+  avatar                      String?
+  status                      UserStatus                   @default(active)
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  firstname                   String?
+  lastname                    String?
+  teamLeadId                  String?
+  hiddenFromLists             Boolean                      @default(false)
+  password                    String?
+  isLocal                     Boolean                      @default(false)
+  includeInReports            Boolean                      @default(true)
+  absences                    Absence[]
+  activityLogs                ActivityLog[]
+  breaks                      Break[]
+  correctionRequests          CorrectionRequest[]
+  hiddenUsernames             HiddenUsername[]
+  pointages                   Pointage[]
+  scheduledEmailJobRecipients ScheduledEmailJobRecipient[]
+  sessions                    Session[]
+  teamLead                    User?                        @relation("TeamLead", fields: [teamLeadId], references: [id])
+  teamMembers                 User[]                       @relation("TeamLead")
+  userPermissions             UserPermission[]
+}
+
+model HiddenUsername {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  hidden    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Pointage {
+  id                 String              @id @default(cuid())
+  userId             String
+  date               DateTime
+  entryTime          String?
+  exitTime           String?
+  duration           Int
+  status             PointageStatus
+  isActive           Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  lateReason         String?
+  source             PointageSource      @default(EMPLOYEE)
+  sessionNumber      Int                 @default(1)
+  earlyExitReason    String?
+  updatedAt          DateTime            @updatedAt
+  pointedBy          PointedBy           @default(employee)
+  correctionRequests CorrectionRequest[]
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date, sessionNumber])
+  @@index([userId, date])
+}
+
+model Break {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  startTime String
+  endTime   String?
+  duration  Int?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Absence {
+  id        String        @id @default(cuid())
+  userId    String
+  type      AbsenceType
+  startDate DateTime
+  endDate   DateTime
+  reason    String
+  status    AbsenceStatus
+  comment   String?
+  createdAt DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CorrectionRequest {
+  id            String           @id @default(cuid())
+  userId        String
+  pointageId    String
+  requestDate   DateTime
+  originalEntry String?
+  originalExit  String?
+  newEntry      String
+  newExit       String
+  reason        String
+  status        CorrectionStatus
+  createdAt     DateTime         @default(now())
+  pointage      Pointage         @relation(fields: [pointageId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id        String       @id @default(cuid())
+  userId    String?
+  action    String
+  details   String
+  timestamp DateTime     @default(now())
+  type      ActivityType
+  user      User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SystemSettings {
+  id                        Int             @id @default(1)
+  workStartTime             String
+  workEndTime               String
+  breakDuration             Int
+  overtimeThreshold         Int
+  holidays                  Json
+  updatedAt                 DateTime        @updatedAt
+  emailNotificationsEnabled Boolean         @default(true)
+  lateAlertsEnabled         Boolean         @default(true)
+  notificationsEnabled      Boolean         @default(true)
+  pointageRemindersEnabled  Boolean         @default(true)
+  maxSessionEndTime         String          @default("20:00")
+  ldapLastSyncAt            DateTime?
+  ldapSyncEnabled           Boolean         @default(false)
+  ldapSyncIntervalMinutes   Int             @default(60)
+  dailyReportMode           DailyReportMode @default(YESTERDAY)
+  timezone                  String          @default("Europe/Paris")
+}
+
+model Department {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  positions   Position[]
+
+  @@map("Department")
+}
+
+model Position {
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  departmentId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([name, departmentId])
+  @@map("Position")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  sessionToken String   @unique
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Permission {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  description     String?
+  category        String
+  /// Module fonctionnel : préfixe avant le point (ex: "absences" dans "absences.approve")
+  module          String?
+  /// Action granulaire : suffixe après le point (ex: "approve" dans "absences.approve")
+  action          String?
+  /// Niveau de risque de la permission
+  riskLevel       PermissionRisk   @default(LOW)
+  /// Permission système : ne pas supprimer ni renommer
+  isSystem        Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  pagePermissions PagePermission[]
+  userPermissions UserPermission[]
+
+  @@index([module])
+}
+
+model UserPermission {
+  id           String     @id @default(cuid())
+  userId       String
+  permissionId String
+  grantedBy    String
+  grantedAt    DateTime   @default(now())
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@index([userId])
+  @@index([permissionId])
+}
+
+model Page {
+  id              String           @id @default(cuid())
+  code            String           @unique
+  path            String           @unique
+  label           String
+  category        String?
+  allowedRoles    UserRole[]
+  pagePermissions PagePermission[]
+}
+
+model PagePermission {
+  pageId       String
+  permissionId String
+  page         Page       @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([pageId, permissionId])
+}
+
+model ScheduledEmailJob {
+  id             String                       @id @default(cuid())
+  type           ScheduledEmailType           @unique
+  enabled        Boolean                      @default(true)
+  hour           Int
+  minute         Int
+  weekday        Int?
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+  includeCsv     Boolean                      @default(false)
+  includeExcel   Boolean                      @default(false)
+  includePdf     Boolean                      @default(true)
+  monthlySendDay Int                          @default(1)
+  weekStartDay   Int                          @default(1)
+  recipients     ScheduledEmailJobRecipient[]
+}
+
+model ScheduledEmailJobRecipient {
+  id     String            @id @default(cuid())
+  jobId  String
+  userId String?
+  email  String?
+  job    ScheduledEmailJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user   User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId])
+  @@unique([jobId, email])
+}
+
+enum PointageSource {
+  EMPLOYEE
+  ADMIN
+  MANAGER
+}
+
+enum PointedBy {
+  employee
+  admin
+  manager
+}
+
+enum ScheduledEmailType {
+  DAILY_REPORT
+  WEEKLY_REPORT
+  MONTHLY_REPORT
+}
+
+enum DailyReportMode {
+  TODAY
+  YESTERDAY
+}
+
+enum UserRole {
+  employee
+  manager
+  admin
+  team_lead
+}
+
+enum UserStatus {
+  active
+  inactive
+  deleted
+}
+
+enum PointageStatus {
+  normal
+  late
+  incomplete
+  admin_closed
+}
+
+enum AbsenceType {
+  conge
+  maladie
+  autre
+}
+
+enum AbsenceStatus {
+  pending
+  approved
+  rejected
+}
+
+enum CorrectionStatus {
+  pending
+  approved
+  rejected
+}
+
+enum ActivityType {
+  auth
+  pointage
+  absence
+  user
+  validation
+}
+
+/// Niveau de risque d'une permission — utilisé pour l'audit et l'affichage
+enum PermissionRisk {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
