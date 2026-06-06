@@ -3,7 +3,13 @@
 # Fichier : .github/workflows/cd.yml
 #
 # DÉCLENCHEUR :
-#   - Push sur main uniquement (après merge d'une Pull Request approuvée)
+#   ⚠️  TEMPORAIREMENT en manuel uniquement (workflow_dispatch) — SSH pas encore configuré.
+#   Pour activer le déploiement automatique sur push main :
+#     1. Configurer les secrets SSH dans GitHub (voir section SECRETS ci-dessous)
+#     2. Remplacer le bloc "on:" par :
+#        on:
+#          push:
+#            branches: [main]
 #
 # ÉTAPES : Vérification pré-déploiement → Déploiement SSH → Health check
 #
@@ -30,9 +36,11 @@
 name: CD — Déploiement Production
 
 on:
-  push:
-    branches:
-      - main  # Se déclenche UNIQUEMENT quand un commit atterrit sur main (merge de PR)
+  # Déclenchement MANUEL uniquement jusqu'à ce que les secrets SSH soient configurés.
+  # Une fois SSH prêt, remplacer ce bloc par :
+  #   push:
+  #     branches: [main]
+  workflow_dispatch:
 
 jobs:
 
