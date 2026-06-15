@@ -16,6 +16,8 @@ import { GetLeaveRequestsTool } from './tools/get-leave-requests.tool.js';
 import { GetTeamAttendanceTool } from './tools/get-team-attendance.tool.js';
 import { GetDepartmentStatisticsTool } from './tools/get-department-statistics.tool.js';
 import { GetMyLeavesSummaryTool } from './tools/get-my-leaves-summary.tool.js';
+import { GetMyPointageHistoryTool } from './tools/get-my-pointage-history.tool.js';
+import { SearchEmployeeTool } from './tools/search-employee.tool.js';
 
 @Module({
   imports: [PrismaModule, AuthModule],
@@ -38,6 +40,8 @@ import { GetMyLeavesSummaryTool } from './tools/get-my-leaves-summary.tool.js';
     GetTeamAttendanceTool,
     GetDepartmentStatisticsTool,
     GetMyLeavesSummaryTool,
+    GetMyPointageHistoryTool,
+    SearchEmployeeTool,
   ],
 })
 export class AiModule {}

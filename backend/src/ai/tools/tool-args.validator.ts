@@ -179,6 +179,59 @@ export function validateGetDepartmentStatisticsArgs(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// get_my_pointage_history  →  { period?: 'today' | 'week' | 'month' }
+// ─────────────────────────────────────────────────────────────────────────────
+export function validateGetMyPointageHistoryArgs(
+  args: Record<string, unknown>,
+): ToolArgsValidation {
+  const { period } = args;
+
+  if (period === undefined || period === null || period === '') {
+    return { valid: true, sanitized: { period: 'week' } };
+  }
+  if (typeof period !== 'string') {
+    return {
+      valid: false,
+      error: 'Le champ period doit être une chaîne.',
+      sanitized: {},
+    };
+  }
+  if (!(VALID_PERIODS as readonly string[]).includes(period)) {
+    return {
+      valid: false,
+      error: `Période invalide "${period}". Valeurs acceptées : ${VALID_PERIODS.join(', ')}.`,
+      sanitized: {},
+    };
+  }
+  return { valid: true, sanitized: { period } };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// search_employee  →  { query: string }
+// ─────────────────────────────────────────────────────────────────────────────
+export function validateSearchEmployeeArgs(
+  args: Record<string, unknown>,
+): ToolArgsValidation {
+  const { query } = args;
+
+  if (typeof query !== 'string' || query.trim().length === 0) {
+    return {
+      valid: false,
+      error: 'Le champ query est requis et doit être une chaîne non vide.',
+      sanitized: {},
+    };
+  }
+  if (query.length > 100) {
+    return {
+      valid: false,
+      error: 'Recherche trop longue (max 100 caractères).',
+      sanitized: {},
+    };
+  }
+  return { valid: true, sanitized: { query: query.trim() } };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // get_my_leaves_summary  →  { year?: string | number }
 // ─────────────────────────────────────────────────────────────────────────────
 export function validateGetMyLeavesSummaryArgs(

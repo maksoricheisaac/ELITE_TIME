@@ -35,10 +35,12 @@ export const TOOL_ROLE_PERMISSIONS: Readonly<
 > = {
   get_my_hours: ['admin', 'manager', 'team_lead', 'employee'],
   get_my_leaves_summary: ['admin', 'manager', 'team_lead', 'employee'],
+  get_my_pointage_history: ['admin', 'manager', 'team_lead', 'employee'],
   get_leave_requests: ['admin', 'manager', 'team_lead', 'employee'],
   get_absent_today: ['admin', 'manager', 'team_lead'],
   get_late_employees: ['admin', 'manager', 'team_lead'],
   get_team_attendance: ['admin', 'manager', 'team_lead'],
+  search_employee: ['admin', 'manager', 'team_lead'],
   get_department_statistics: ['admin', 'manager'],
 } as const;
 

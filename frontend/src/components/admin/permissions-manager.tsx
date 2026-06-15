@@ -129,6 +129,32 @@ export function PermissionsManager({ users, permissions }: PermissionsManagerPro
     }
   };
 
+  const handleCategoryToggle = (categoryPermissions: Permission[], isChecked: boolean) => {
+    const uid = selectedUser?.id ?? null;
+    const ids = categoryPermissions.map((p) => p.id);
+    if (isChecked) {
+      setPending(({ pendingAdd: pa, pendingRemove: pr }) => {
+        const nextAdd = new Set(pa);
+        const nextRemove = new Set(pr);
+        for (const id of ids) {
+          nextAdd.add(id);
+          nextRemove.delete(id);
+        }
+        return { userId: uid, pendingAdd: nextAdd, pendingRemove: nextRemove };
+      });
+    } else {
+      setPending(({ pendingAdd: pa, pendingRemove: pr }) => {
+        const nextAdd = new Set(pa);
+        const nextRemove = new Set(pr);
+        for (const id of ids) {
+          nextRemove.add(id);
+          nextAdd.delete(id);
+        }
+        return { userId: uid, pendingAdd: nextAdd, pendingRemove: nextRemove };
+      });
+    }
+  };
+
   const applyChanges = async () => {
     if (!selectedUser) return;
 
@@ -398,11 +424,33 @@ export function PermissionsManager({ users, permissions }: PermissionsManagerPro
                 </div>
               </div>
 
-              {Object.entries(groupedPermissions).map(([category, categoryPermissions]) => (
+              {Object.entries(groupedPermissions).map(([category, categoryPermissions]) => {
+                const categoryIds = categoryPermissions.map((p) => p.id);
+                const selectedCount = categoryIds.filter((id) => selectedPermissionIds.has(id)).length;
+                const allSelected = selectedCount === categoryIds.length;
+                const someSelected = selectedCount > 0 && !allSelected;
+
+                return (
                 <div key={category} className="space-y-3">
-                  <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                    {category}
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`category-${category}`}
+                      checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                      onCheckedChange={(checked) =>
+                        handleCategoryToggle(categoryPermissions, checked === true)
+                      }
+                      disabled={isLoading || selectedUser.role === 'admin'}
+                    />
+                    <Label
+                      htmlFor={`category-${category}`}
+                      className="font-medium text-sm text-muted-foreground uppercase tracking-wide cursor-pointer"
+                    >
+                      {category}
+                    </Label>
+                    <span className="text-xs text-muted-foreground">
+                      ({selectedCount}/{categoryIds.length})
+                    </span>
+                  </div>
                   <div className="space-y-2">
                     {categoryPermissions.map((permission) => (
                       <div
@@ -438,7 +486,8 @@ export function PermissionsManager({ users, permissions }: PermissionsManagerPro
                     ))}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

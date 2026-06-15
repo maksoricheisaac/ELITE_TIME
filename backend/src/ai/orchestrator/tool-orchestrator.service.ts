@@ -16,6 +16,8 @@ import { GetLeaveRequestsTool } from '../tools/get-leave-requests.tool.js';
 import { GetTeamAttendanceTool } from '../tools/get-team-attendance.tool.js';
 import { GetDepartmentStatisticsTool } from '../tools/get-department-statistics.tool.js';
 import { GetMyLeavesSummaryTool } from '../tools/get-my-leaves-summary.tool.js';
+import { GetMyPointageHistoryTool } from '../tools/get-my-pointage-history.tool.js';
+import { SearchEmployeeTool } from '../tools/search-employee.tool.js';
 import {
   getAllowedToolNames,
   isToolAllowedForRole,
@@ -33,6 +35,8 @@ const TOOL_DISPLAY_LABELS: Record<string, string> = {
   get_team_attendance: 'Présences équipe',
   get_department_statistics: 'Stats département',
   get_my_leaves_summary: 'Résumé congés',
+  get_my_pointage_history: 'Historique pointages',
+  search_employee: 'Recherche employé',
 };
 
 interface ToolLoopResult {
@@ -190,6 +194,8 @@ export class ToolOrchestratorService {
     private readonly getTeamAttendanceTool: GetTeamAttendanceTool,
     private readonly getDepartmentStatisticsTool: GetDepartmentStatisticsTool,
     private readonly getMyLeavesSummaryTool: GetMyLeavesSummaryTool,
+    private readonly getMyPointageHistoryTool: GetMyPointageHistoryTool,
+    private readonly searchEmployeeTool: SearchEmployeeTool,
   ) {
     const entries: [string, AiTool][] = [
       [getMyHoursTool.definition.function.name, getMyHoursTool],
@@ -202,6 +208,11 @@ export class ToolOrchestratorService {
         getDepartmentStatisticsTool,
       ],
       [getMyLeavesSummaryTool.definition.function.name, getMyLeavesSummaryTool],
+      [
+        getMyPointageHistoryTool.definition.function.name,
+        getMyPointageHistoryTool,
+      ],
+      [searchEmployeeTool.definition.function.name, searchEmployeeTool],
     ];
     this.toolRegistry = new Map(entries);
   }

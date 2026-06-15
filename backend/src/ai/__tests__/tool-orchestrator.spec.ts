@@ -10,6 +10,8 @@ import { GetLeaveRequestsTool } from '../tools/get-leave-requests.tool.js';
 import { GetTeamAttendanceTool } from '../tools/get-team-attendance.tool.js';
 import { GetDepartmentStatisticsTool } from '../tools/get-department-statistics.tool.js';
 import { GetMyLeavesSummaryTool } from '../tools/get-my-leaves-summary.tool.js';
+import { GetMyPointageHistoryTool } from '../tools/get-my-pointage-history.tool.js';
+import { SearchEmployeeTool } from '../tools/search-employee.tool.js';
 import type { ToolContext } from '../interfaces/tool-context.interface.js';
 import type { OllamaChatResponse } from '../interfaces/ollama.types.js';
 
@@ -109,6 +111,18 @@ describe('ToolOrchestratorService', () => {
         {
           provide: GetMyLeavesSummaryTool,
           useValue: new GetMyLeavesSummaryTool(
+            mockPrisma as unknown as PrismaService,
+          ),
+        },
+        {
+          provide: GetMyPointageHistoryTool,
+          useValue: new GetMyPointageHistoryTool(
+            mockPrisma as unknown as PrismaService,
+          ),
+        },
+        {
+          provide: SearchEmployeeTool,
+          useValue: new SearchEmployeeTool(
             mockPrisma as unknown as PrismaService,
           ),
         },
