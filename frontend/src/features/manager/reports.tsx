@@ -682,13 +682,18 @@ export default function ManagerReportsClient({
 
     <div className="space-y-6">
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 
         <div>
 
-          <h1 className="text-3xl font-bold">Rapports</h1>
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-primary mb-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+            Rapports
+          </div>
 
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Rapports</h1>
+
+          <p className="text-sm text-muted-foreground mt-1">
 
             Analyse des performances de l&apos;équipe
 
@@ -696,10 +701,10 @@ export default function ManagerReportsClient({
 
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap gap-2 sm:shrink-0">
 
           {canExportExcel && (
-          <Button className="cursor-pointer" variant="outline" onClick={handleExportExcel} disabled={isExportingExcel}>
+          <Button className="cursor-pointer flex-1 sm:flex-none" variant="outline" onClick={handleExportExcel} disabled={isExportingExcel}>
 
             <FileSpreadsheet className="mr-2 h-4 w-4" />
 
@@ -709,11 +714,11 @@ export default function ManagerReportsClient({
           )}
 
           {canExportPdf && (
-          <Button className="cursor-pointer" onClick={handleExportPdf} disabled={isExportingPdf}>
+          <Button className="cursor-pointer flex-1 sm:flex-none" onClick={handleExportPdf} disabled={isExportingPdf}>
 
             <Download className="mr-2 h-4 w-4" />
 
-            {isExportingPdf ? "Génération..." : "Télécharger le PDF"}
+            {isExportingPdf ? "Génération..." : "PDF"}
 
           </Button>
           )}
@@ -722,37 +727,40 @@ export default function ManagerReportsClient({
 
       </div>
 
-    
 
-      <div className="flex flex-wrap items-center gap-4">
 
-        <div className="w-full max-w-xs">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end">
+
+        <div className="space-y-1 sm:col-span-2 lg:col-span-1">
 
           <EmployeeReportDateRangeFilter />
 
         </div>
 
-    
 
-        <Input
 
-          placeholder="Rechercher un employé..."
+        <div className="space-y-1">
+          <Input
 
-          className="w-64"
+            placeholder="Rechercher un employé..."
 
-          value={searchTerm}
+            className="w-full lg:w-64"
 
-          onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchTerm}
 
-        />
+            onChange={(e) => setSearchTerm(e.target.value)}
 
-    
+          />
+        </div>
+
+
 
         {departments.length > 1 && (
 
+          <div className="space-y-1">
           <Select value={filterDepartment} onValueChange={setFilterDepartment}>
 
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full lg:w-48">
 
               <SelectValue placeholder="Filtrer par département" />
 
@@ -775,14 +783,15 @@ export default function ManagerReportsClient({
             </SelectContent>
 
           </Select>
+          </div>
 
         )}
 
       </div>
 
-    
 
-      <div className="grid gap-4 md:grid-cols-3">
+
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
 
         <Card>
 

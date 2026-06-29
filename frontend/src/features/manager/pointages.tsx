@@ -1314,9 +1314,9 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
       <div className="space-y-3">
 
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0">
 
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
 
@@ -1336,9 +1336,9 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:shrink-0">
 
-            <div className="w-full sm:w-auto sm:min-w-[220px]">
+            <div className="w-full sm:w-auto sm:min-w-[200px]">
 
               <EmployeeReportDateRangeFilter />
 
@@ -1468,17 +1468,17 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
         <CardContent className="space-y-3">
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
 
-            <div className="space-y-2">
+            <div className="space-y-1 flex-1 min-w-[140px]">
 
-              <Label className="text-sm text-muted-foreground">Rechercher un employé</Label>
+              <Label className="text-xs text-muted-foreground">Rechercher un employé</Label>
 
               <Input
 
                 placeholder="Nom, prénom"
 
-                className="w-full lg:w-64"
+                className="w-full"
 
                 value={searchTerm}
 
@@ -1490,13 +1490,13 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
 
 
-            <div className="space-y-2">
+            <div className="space-y-1 flex-1 min-w-[140px]">
 
-              <Label className="text-sm text-muted-foreground">Rechercher par statut</Label>
+              <Label className="text-xs text-muted-foreground">Statut</Label>
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
 
-              <SelectTrigger className="w-full lg:w-48">
+              <SelectTrigger className="w-full">
 
                 <SelectValue placeholder="Filtrer par statut" />
 
@@ -1520,9 +1520,9 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
             {departments.length > 1 && (
 
-              <div className="space-y-2">
+              <div className="space-y-1 flex-1 min-w-[140px]">
 
-                <Label className="text-sm text-muted-foreground">Rechercher par département</Label>
+                <Label className="text-xs text-muted-foreground">Département</Label>
 
                 <Select
 
@@ -1532,7 +1532,7 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
                 >
 
-                  <SelectTrigger className="w-full lg:w-48">
+                  <SelectTrigger className="w-full">
 
                     <SelectValue placeholder="Filtrer par département" />
 
@@ -1560,15 +1560,11 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
             )}
 
-
-
-          </div>
-
-          <div className="flex flex-wrap justify-end gap-2">
+            <div className="flex gap-2 sm:ml-auto sm:shrink-0">
 
               <Button
 
-                className="cursor-pointer"
+                className="cursor-pointer flex-1 sm:flex-none"
 
                 variant="outline"
 
@@ -1584,13 +1580,15 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
               </Button>
 
-              <Button className="cursor-pointer" onClick={handleExportPdf} disabled={isExportingPdf}>
+              <Button className="cursor-pointer flex-1 sm:flex-none" onClick={handleExportPdf} disabled={isExportingPdf}>
 
                 <Download className="mr-2 h-4 w-4" />
 
                 {isExportingPdf ? "Génération..." : "PDF"}
 
               </Button>
+
+            </div>
 
           </div>
 

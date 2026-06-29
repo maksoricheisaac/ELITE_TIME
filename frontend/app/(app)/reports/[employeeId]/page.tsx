@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { redirect } from "next/navigation";
 import { serverGet } from "@/lib/server-api";
 import type { User, Pointage, Break, Absence, SystemSettings } from "@/types/models";
@@ -213,20 +215,20 @@ export default async function EmployeeReportDetailPage({ params, searchParams }:
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-2 min-w-0">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
             <FileText className="h-3 w-3" />
             Rapport détaillé
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
             {employee.firstname} {employee.lastname}
           </h1>
           <p className="text-sm text-muted-foreground">
             Synthèse des heures travaillées, pauses et retards sur la période sélectionnée.
           </p>
         </div>
-        <Button type="button" variant="outline" asChild className="cursor-pointer">
+        <Button type="button" variant="outline" asChild className="cursor-pointer sm:shrink-0">
           <Link href="/reports" className="inline-flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
             <span>Retour aux rapports</span>
@@ -236,12 +238,12 @@ export default async function EmployeeReportDetailPage({ params, searchParams }:
 
       <Card className="border border-border/80 bg-card/90 shadow-sm">
         <CardHeader className="space-y-4">
-          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <CardTitle>Résumé de la période</CardTitle>
               <CardDescription>Période analysée : {rangeLabel}</CardDescription>
             </div>
-            <div className="flex flex-col items-stretch gap-2 md:items-end">
+            <div className="flex flex-col gap-2 sm:items-end sm:shrink-0">
               <EmployeeReportDateRangeFilter />
               <EmployeeReportExports
                 employeeId={employeeId}
@@ -260,7 +262,7 @@ export default async function EmployeeReportDetailPage({ params, searchParams }:
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
             <div className="space-y-1 rounded-lg border bg-background/60 p-3">
               <p className="text-xs font-medium text-muted-foreground">Heures travaillées</p>
               <p className="text-2xl font-bold">{formatMinutesHuman(totalMinutes)}</p>
@@ -268,10 +270,6 @@ export default async function EmployeeReportDetailPage({ params, searchParams }:
             <div className="space-y-1 rounded-lg border bg-background/60 p-3">
               <p className="text-xs font-medium text-muted-foreground">Retards</p>
               <p className="text-2xl font-bold text-destructive">{lateCount}</p>
-            </div>
-            <div className="space-y-1 rounded-lg border bg-background/60 p-3">
-              <p className="text-xs font-medium text-muted-foreground">Absences</p>
-              <p className="text-2xl font-bold text-warning">{absenceCount}</p>
             </div>
             <div className="space-y-1 rounded-lg border bg-background/60 p-3">
               <p className="text-xs font-medium text-muted-foreground">Heures sup</p>

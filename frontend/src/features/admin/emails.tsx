@@ -230,7 +230,7 @@ export default function AdminEmailsClient({ emailScheduling }: AdminEmailsClient
     new Set(emailScheduling.daily?.recipientUserIds ?? []),
   );
   const [dailyRecipientEmails, setDailyRecipientEmails] = useState<Set<string>>(
-    new Set((emailScheduling.daily?.recipientEmails ?? []).map((v) => v.trim().toLowerCase()).filter(Boolean)),
+    new Set((emailScheduling.daily?.recipientEmails ?? []).map((v) => v.trim()).filter(Boolean)),
   );
   const [dailyEmailInput, setDailyEmailInput] = useState("");
 
@@ -248,7 +248,7 @@ export default function AdminEmailsClient({ emailScheduling }: AdminEmailsClient
     new Set(emailScheduling.weekly?.recipientUserIds ?? []),
   );
   const [weeklyRecipientEmails, setWeeklyRecipientEmails] = useState<Set<string>>(
-    new Set((emailScheduling.weekly?.recipientEmails ?? []).map((v) => v.trim().toLowerCase()).filter(Boolean)),
+    new Set((emailScheduling.weekly?.recipientEmails ?? []).map((v) => v.trim()).filter(Boolean)),
   );
   const [weeklyEmailInput, setWeeklyEmailInput] = useState("");
 
@@ -265,7 +265,7 @@ export default function AdminEmailsClient({ emailScheduling }: AdminEmailsClient
     new Set(emailScheduling.monthly?.recipientUserIds ?? []),
   );
   const [monthlyRecipientEmails, setMonthlyRecipientEmails] = useState<Set<string>>(
-    new Set((emailScheduling.monthly?.recipientEmails ?? []).map((v) => v.trim().toLowerCase()).filter(Boolean)),
+    new Set((emailScheduling.monthly?.recipientEmails ?? []).map((v) => v.trim()).filter(Boolean)),
   );
   const [monthlyEmailInput, setMonthlyEmailInput] = useState("");
 
@@ -277,7 +277,6 @@ export default function AdminEmailsClient({ emailScheduling }: AdminEmailsClient
   ) => {
     const candidates = input
       .trim()
-      .toLowerCase()
       .split(/[\s,;]+/g)
       .map((v) => v.trim())
       .filter(Boolean);
