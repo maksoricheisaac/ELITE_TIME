@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($path = \"C:\\\\Users\\\\ut08rm\\\\Documents\\\\CARS_TRACKING\\\\Apps\\\\Apps PNPM\\\\mobile\\\\node_modules\"; [System.IO.Directory]::GetDirectories\\($path\\) | Select-String \"tanstack|leaflet|native-maps\")",
+      "PowerShell(node -e \"const c = require\\('./node_modules/eslint-config-expo/flat'\\); const rules = c.flatMap ? c.flatMap\\(x => Object.entries\\(x.rules || {}\\)\\) : []; console.log\\(JSON.stringify\\(rules.filter\\(\\([k]\\) => k.includes\\('import'\\)\\).slice\\(0,5\\)\\)\\)\" 2>&1)",
+      "PowerShell(node -e \"try { require\\('eslint-import-resolver-typescript'\\); console.log\\('installed'\\) } catch\\(e\\) { console.log\\('NOT installed:', e.message\\) }\" 2>&1)",
+      "PowerShell(cmd /c \"cd /d \"\"c:\\\\Users\\\\ut08rm\\\\Documents\\\\CARS_TRACKING\\\\Apps\\\\Apps PNPM\\\\backend\"\" && node node_modules\\\\typescript\\\\bin\\\\tsc --noEmit 2>&1\")",
+      "PowerShell(cmd /c \"cd /d \"\"c:\\\\Users\\\\ut08rm\\\\Documents\\\\CARS_TRACKING\\\\Apps\\\\Apps PNPM\\\\mobile\"\" && pnpm exec expo install zustand axios expo-secure-store expo-location expo-notifications 2>&1\")",
+      "PowerShell(cmd /c \"cd /d \"\"c:\\\\Users\\\\ut08rm\\\\Documents\\\\CARS_TRACKING\\\\Apps\\\\Apps PNPM\\\\mobile\"\" && pnpm add zustand axios expo-secure-store@~15.0.8 expo-location@~19.0.8 expo-notifications@~0.32.17 2>&1\")",
+      "PowerShell(cmd /c \"cd /d \"\"c:\\\\Users\\\\ut08rm\\\\Documents\\\\CARS_TRACKING\\\\Apps\\\\Apps PNPM\\\\mobile\"\" && pnpm add --ignore-workspace zustand axios expo-secure-store@~15.0.8 expo-location@~19.0.8 expo-notifications@~0.32.17 2>&1\")",
+      "PowerShell(cmd /c \"cd /d \"\"c:\\\\Users\\\\ut08rm\\\\Documents\\\\CARS_TRACKING\\\\Apps\\\\Apps PNPM\\\\mobile\"\" && pnpm install --no-frozen-lockfile 2>&1\")",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\ut08rm\\\\Documents\\\\CARS_TRACKING\\\\Apps\\\\Apps PNPM\\\\backend\" -File | Where-Object {$_.PSIsContainer -eq $false} | Select-Object Name)",
+      "PowerShell(cd \"c:\\\\Users\\\\ut08rm\\\\Documents\\\\CARS_TRACKING\\\\Apps\\\\Apps PNPM\\\\mobile\"; pnpm tsc --noEmit 2>&1 | Where-Object { $_ -match \"error TS\" -and $_ -notmatch \"LeafletMap\" })",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\ut08rm\\\\Documents\\\\CARS_TRACKING\\\\Apps\\\\Apps PNPM\\\\mobile\\\\components\\\\ui\" -File | Select-Object Name, @{Name=\"FullPath\"; Expression={$_.FullName}} | Format-List)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Apps\\\\elitetime\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Apps\\\\elitetime\" -File)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "Bash(npx tsc *)",
+      "Bash(Select-Object -First 10)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Apps\\\\elitetime\" -Recurse -Directory | Select-Object -First 30 | ForEach-Object { $_.FullName })",
+      "Bash(npx prisma *)",
+      "Bash(npm install *)",
+      "PowerShell($pid4000 = \\(netstat -ano | Select-String \":4000\" | ForEach-Object { \\($_ -split '\\\\s+'\\)[-1] } | Select-Object -First 1\\).Trim\\(\\); \"PID backend: $pid4000\")",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\APPS\\\\ELITE_TIME\\\\frontend\\\\app\" -Recurse -Include \"page.tsx\" | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\('c:\\\\APPS\\\\ELITE_TIME\\\\frontend\\\\', ''\\) })",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\APPS\\\\ELITE_TIME\\\\frontend\\\\app\" -Recurse -Include \"layout.tsx\" | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\('c:\\\\APPS\\\\ELITE_TIME\\\\frontend\\\\', ''\\) })"
+    ]
+  }
+}
