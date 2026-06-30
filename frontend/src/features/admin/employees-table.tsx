@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -119,7 +120,10 @@ function EmployeeEditDialog({
     // Vérifier si le poste actuel appartient au nouveau département
     const currentPosition = form.getValues("position");
     if (currentPosition && currentPosition !== "__none") {
-      const positionBelongsToDept = filteredPositions.some((p) => p.name === currentPosition);
+      const positionsForNewDept = value === "__none" || !value
+        ? positions
+        : positions.filter((p) => p.department?.name === value);
+      const positionBelongsToDept = positionsForNewDept.some((p) => p.name === currentPosition);
       if (!positionBelongsToDept) {
         form.setValue("position", "__none");
       }
@@ -136,8 +140,8 @@ function EmployeeEditDialog({
       formData.append("email", values.email ?? "");
       formData.append("role", values.role);
       formData.append("status", values.status);
-      formData.append("department", values.department ?? "__none");
-      formData.append("position", values.position ?? "__none");
+      formData.append("department", values.department === "__none" ? "" : (values.department ?? ""));
+      formData.append("position", values.position === "__none" ? "" : (values.position ?? ""));
 
       await onUpdateEmployee(formData);
     });
@@ -352,6 +356,7 @@ export default function EmployeesTable({
   onSoftDeleteEmployee,
   onToggleIncludeInReports,
 }: EmployeesTableProps) {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -452,7 +457,7 @@ export default function EmployeesTable({
                   <Switch
                     checked={included}
                     onCheckedChange={(checked) => {
-                      void onToggleIncludeInReports(e.id, checked);
+                      void Promise.resolve(onToggleIncludeInReports(e.id, checked)).then(() => router.refresh());
                     }}
                     aria-label="Inclure dans les rapports"
                   />

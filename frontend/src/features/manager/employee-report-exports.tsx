@@ -55,6 +55,7 @@ export function EmployeeReportExports({
 }: EmployeeReportExportsProps) {
   const { showSuccess, showError, showInfo } = useNotification();
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
 
   const hasData = rows.length > 0;
   const fileSlug = buildEmployeeSlug(employee.firstname, employee.lastname);
@@ -95,8 +96,12 @@ export function EmployeeReportExports({
   };
 
   const handleExportExcel = async () => {
+    if (!hasData) {
+      showInfo("Aucune donnée à exporter pour cette période.");
+      return;
+    }
     try {
-      setIsExportingPdf(true);
+      setIsExportingExcel(true);
 
       const fromIso = new Date(from).toISOString();
       const toIso = new Date(to).toISOString();
@@ -116,12 +121,15 @@ export function EmployeeReportExports({
       a.click();
       URL.revokeObjectURL(url);
 
+      const periodDetails = `Employé: ${employee.firstname} ${employee.lastname} – période ${new Date(from).toLocaleDateString("fr-FR")} à ${new Date(to).toLocaleDateString("fr-FR")}`;
+      void logReportExport("EMPLOYEE_REPORT_EXCEL", periodDetails);
+
       showSuccess("Rapport Excel téléchargé avec succès");
     } catch (error) {
       console.error(error);
       showError("Une erreur est survenue lors de la génération de l'Excel.");
     } finally {
-      setIsExportingPdf(false);
+      setIsExportingExcel(false);
     }
   };
 
@@ -174,10 +182,10 @@ export function EmployeeReportExports({
           variant="outline"
           size="sm"
           onClick={handleExportExcel}
-          disabled={!hasData || isExportingPdf}
+          disabled={!hasData || isExportingExcel}
         >
           <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
-          <span>Excel</span>
+          <span>{isExportingExcel ? "Génération..." : "Excel"}</span>
         </Button>
       )}
       {canExportPdf && (

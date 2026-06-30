@@ -5,13 +5,15 @@ import { serverPatch, serverPost, serverDelete } from "@/lib/server-api";
 
 export async function updateEmployee(formData: FormData) {
   const id = formData.get("id") as string;
+  const department = formData.get("department") as string | null;
+  const position = formData.get("position") as string | null;
   await serverPatch(`/users/${id}`, {
     firstname: formData.get("firstname") || undefined,
     lastname: formData.get("lastname") || undefined,
     email: formData.get("email") || undefined,
     role: formData.get("role") || undefined,
-    department: formData.get("department") || undefined,
-    position: formData.get("position") || undefined,
+    department: department ? department : null,
+    position: position ? position : null,
     status: formData.get("status") || undefined,
     teamLeadId: formData.get("teamLeadId") || undefined,
   });

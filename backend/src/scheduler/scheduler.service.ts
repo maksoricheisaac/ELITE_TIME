@@ -7,6 +7,7 @@ import {
   ScheduledEmailService,
   getCalendarDateInTZ,
 } from '../email/scheduled-email.service';
+import { PointagesService } from '../pointages/pointages.service';
 
 const REMINDER_START_HOUR = 17;
 const REMINDER_START_MINUTE = 25;
@@ -27,6 +28,7 @@ export class SchedulerService implements OnModuleDestroy {
     private readonly gateway: WebsocketGateway,
     private readonly ldapSync: LdapSyncService,
     private readonly emailService: ScheduledEmailService,
+    private readonly pointagesService: PointagesService,
   ) {}
 
   onModuleDestroy() {
@@ -139,10 +141,10 @@ export class SchedulerService implements OnModuleDestroy {
 
     await this.prisma.pointage.updateMany({
       where: { id: { in: actives.map((a) => a.id) } },
-      data: { isActive: false, status: 'incomplete' },
+      data: { isActive: false, status: 'admin_closed' },
     });
     this.logger.log(
-      `[auto-close] ${actives.length} pointage(s) marqué(s) incomplets`,
+      `[auto-close] ${actives.length} pointage(s) fermés automatiquement (admin_closed)`,
     );
   }
 
@@ -204,6 +206,22 @@ export class SchedulerService implements OnModuleDestroy {
       }
     } catch (err) {
       this.logger.error('[email-polling] tick échoué', err);
+    }
+  }
+
+  // ── Résolution des faux "incomplete" — toutes les heures ─────────────────
+
+  @Interval(60 * 60_000)
+  async resolveIncompleteStatuses() {
+    try {
+      const count = await this.pointagesService.resolveIncompleteStatuses();
+      if (count > 0) {
+        this.logger.log(
+          `[resolve-incomplete] tick horaire : ${count} pointage(s) corrigé(s)`,
+        );
+      }
+    } catch (err) {
+      this.logger.error('[resolve-incomplete] tick échoué', err);
     }
   }
 

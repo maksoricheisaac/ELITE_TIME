@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { adminGetSystemSettings } from '@/actions/admin/settings';
 import { adminGetEmailScheduling } from '@/actions/admin/email-scheduling';
 import AdminSettingsClient from '@/features/admin/settings';

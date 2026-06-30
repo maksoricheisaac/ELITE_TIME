@@ -141,9 +141,25 @@ export default function DepartmentsTable({
     {
       accessorKey: "description",
       header: () => <span>Description</span>,
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">{row.original.description || "-"}</span>
-      ),
+      cell: ({ row }) => {
+        const desc = row.original.description;
+        if (!desc) return <span className="text-sm text-muted-foreground">-</span>;
+        const truncated = desc.length > 60 ? desc.slice(0, 60).trimEnd() + "…" : desc;
+        return (
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-sm text-muted-foreground cursor-default block truncate max-w-[160px] sm:max-w-[260px]">
+                  {truncated}
+                </span>
+              </TooltipTrigger>
+              {desc.length > 60 && (
+                <TooltipContent className="max-w-xs whitespace-pre-wrap">{desc}</TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        );
+      },
     },
     {
       accessorKey: "employeesCount",

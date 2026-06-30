@@ -104,9 +104,14 @@ export function groupPointagesByDay(
       );
 
       // 6. Statut de la journée.
-      const isIncomplete = userPointages.every(
-        (p) => !p.exitTime && !p.isActive && p.status === 'incomplete',
-      );
+      // Un jour est incomplet seulement si la dernière session active n'a pas
+      // de sortie pointée. Si au moins une session a un exitTime, la journée
+      // est considérée complète (présent ou admin_closed selon le statut).
+      const lastSession = userPointages[userPointages.length - 1];
+      const isIncomplete =
+        !lastSession.exitTime &&
+        !lastSession.isActive &&
+        lastSession.status === 'incomplete';
       const isAdminClosed =
         !isIncomplete && userPointages.some((p) => p.status === 'admin_closed');
 
@@ -117,7 +122,7 @@ export function groupPointagesByDay(
       const checkIn = firstPointage.entryTime || '—';
       const checkOut = isIncomplete
         ? 'Départ non pointé'
-        : lastPointage.exitTime || '—';
+        : lastPointage.exitTime || (isAdminClosed ? 'Fermé auto.' : '—');
 
       // 8. Raisons — dédupliquées pour éviter la répétition quand plusieurs
       //    enregistrements partagent la même raison (corrections, doublons BDD).

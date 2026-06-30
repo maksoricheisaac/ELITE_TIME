@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { serverGet } from "@/lib/server-api";
 import type { User, Pointage, Break, Absence } from "@/types/models";
 import { getEmployeeRecentPointages } from "@/actions/employee/pointages";

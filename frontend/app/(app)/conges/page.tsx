@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { redirect } from "next/navigation";
 import { serverGet } from "@/lib/server-api";
 import LeaveManagementClient from "@/features/manager/leaves";

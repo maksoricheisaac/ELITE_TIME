@@ -1,4 +1,6 @@
 
+export const dynamic = 'force-dynamic';
+
 import type { User, Department, Position } from '@/types/models';
 import { requireNavigationAccessById } from '@/lib/navigation-guard';
 import { EmployeesUpdateNotifier } from '@/features/admin/employees-update-notifier';

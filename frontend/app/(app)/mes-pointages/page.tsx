@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { requireNavigationAccessById } from "@/lib/navigation-guard";
 import { getEmployeeRecentPointages } from "@/actions/employee/pointages";
 import EmployeePointagesClient from "@/features/employee/pointages";

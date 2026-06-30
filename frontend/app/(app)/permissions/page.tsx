@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import type { User, Permission } from '@/types/models';
 import { requireNavigationAccessById } from '@/lib/navigation-guard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

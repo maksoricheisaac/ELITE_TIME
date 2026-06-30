@@ -105,9 +105,18 @@ export class PointagesService {
       const cutoff = new Date(p.date);
       cutoff.setHours(mH, mM, 0, 0);
       if (new Date() > cutoff) {
+        // Fermeture automatique : on enregistre l'heure de fermeture forcée
+        // et on utilise admin_closed plutôt que incomplete — les horaires
+        // sont bien présents, ce n'est pas un pointage incomplet.
+        const exitTime = maxSessionEndTime;
+        const enc = encryptPointage({ exitTime });
+        const decryptedEntry = decrypt(p.entryTime);
+        const [eh, em] = decryptedEntry.split(':').map(Number);
+        const [xh, xm] = this.parseHM(maxSessionEndTime);
+        const duration = Math.max(0, xh * 60 + xm - (eh * 60 + em));
         const updated = await this.prisma.pointage.update({
           where: { id: p.id },
-          data: { isActive: false, status: 'incomplete' },
+          data: { ...enc, duration, isActive: false, status: 'admin_closed' },
         });
         return decryptPointage(updated);
       }
@@ -185,9 +194,13 @@ export class PointagesService {
       const activeDate = new Date(existingActive.date);
       const sameDay = new Date().toDateString() === activeDate.toDateString();
       if (!sameDay) {
+        // Session ouverte d'un jour précédent : fermeture forcée.
+        // Le statut "incomplete" ne s'applique QUE si l'heure d'entrée est absente.
+        // Ici elle est forcément présente (isActive=true implique une entrée),
+        // donc on utilise admin_closed pour signaler la fermeture automatique.
         await this.prisma.pointage.update({
           where: { id: existingActive.id },
-          data: { isActive: false, status: 'incomplete' },
+          data: { isActive: false, status: 'admin_closed' },
         });
       } else {
         return decryptPointage(existingActive);
@@ -204,7 +217,9 @@ export class PointagesService {
     const entryTime = now.toTimeString().slice(0, 5);
     const { workStartTime } = await this.getSettings();
     const [startH, startM] = this.parseHM(workStartTime);
+    // Seule la première session de la journée peut être marquée en retard.
     const isLate =
+      nextSession === 1 &&
       !this.isWeekend(now) &&
       (now.getHours() > startH ||
         (now.getHours() === startH && now.getMinutes() > startM));
@@ -326,6 +341,10 @@ export class PointagesService {
         'pointage',
       );
     }
+
+    // Correction opportuniste : le pointage qui vient d'être clôturé était
+    // peut-être marqué "incomplete" — on recalcule tous les faux incomplets.
+    await this.resolveIncompleteStatuses();
 
     return {
       pointage: decryptPointage(updated),
@@ -491,7 +510,71 @@ export class PointagesService {
       `Pointage de ${userId} le ${dateStr} - entrée: ${entryTime ?? '—'}, sortie: ${exitTime ?? '—'}`,
       'pointage',
     );
+
+    // Recalcule les faux "incomplete" après chaque modification manager.
+    await this.resolveIncompleteStatuses();
+
     return decryptPointage(result);
+  }
+
+  // ── RÉSOLUTION AUTOMATIQUE DES FAUX "incomplete" ─────────────────────────
+  //
+  // Un pointage est "incomplet" uniquement si l'heure d'entrée OU de sortie
+  // est absente. Si les deux sont présentes et le statut reste "incomplete",
+  // c'est un artefact d'une ancienne logique — on recalcule le vrai statut.
+
+  async resolveIncompleteStatuses(): Promise<number> {
+    const { workStartTime } = await this.getSettings();
+    const [sh, sm] = this.parseHM(workStartTime);
+
+    const faux = await this.prisma.pointage.findMany({
+      where: {
+        status: 'incomplete',
+        isActive: false,
+        entryTime: { not: null },
+        exitTime: { not: null },
+      },
+      select: { id: true, entryTime: true, date: true },
+    });
+
+    if (faux.length === 0) return 0;
+
+    const toNormal: string[] = [];
+    const toLate: string[] = [];
+
+    for (const p of faux) {
+      const entryRaw = decrypt(p.entryTime!);
+      const [eh, em] = entryRaw.split(':').map(Number);
+      const isWeekendDay = this.isWeekend(new Date(p.date));
+      if (!isWeekendDay && (eh > sh || (eh === sh && em > sm))) {
+        toLate.push(p.id);
+      } else {
+        toNormal.push(p.id);
+      }
+    }
+
+    let count = 0;
+    if (toNormal.length > 0) {
+      const { count: n } = await this.prisma.pointage.updateMany({
+        where: { id: { in: toNormal } },
+        data: { status: 'normal' },
+      });
+      count += n;
+    }
+    if (toLate.length > 0) {
+      const { count: n } = await this.prisma.pointage.updateMany({
+        where: { id: { in: toLate } },
+        data: { status: 'late' },
+      });
+      count += n;
+    }
+
+    if (count > 0) {
+      this.logger.log(
+        `[resolve-incomplete] ${count} pointage(s) corrigé(s) (${toNormal.length} normal, ${toLate.length} late)`,
+      );
+    }
+    return count;
   }
 
   async deleteExtraSessions(userId: string, dateStr: string) {

@@ -1,37 +1,6 @@
+
 module.exports = {
   apps: [
-    // ── Next.js (frontend) ────────────────────────────────────────────────────
-    {
-      name: "elitetime",
-      script: "C:\\Apps\\elitetime\\node_modules\\tsx\\dist\\cli.mjs",
-      args: "server.ts",
-      cwd: "C:\\Apps\\elitetime",
-      instances: 1,
-      exec_mode: "fork",
-      autorestart: true,
-      watch: false,
-      max_memory_restart: "500M",
-      restart_delay: 4000,
-      min_uptime: "10s",
-      max_restarts: 10,
-      merge_logs: true,
-      env: {
-        NODE_ENV: "production",
-        PORT: "3000",
-        DOTENV_CONFIG_PATH: "C:\\Apps\\elitetime\\.env",
-        NEXT_PUBLIC_SOCKET_URL: "http://10.0.100.58:4000",
-        NEXT_ALLOWED_ORIGINS: "10.0.100.58,10.0.100.58:3000,localhost:3000",
-        ALLOWED_ORIGINS: "http://10.0.100.58,http://localhost:3000",
-        FORCE_COLOR: "0",
-        TEMP: "C:\\pm2-data\\temp",
-        TMP: "C:\\pm2-data\\temp"
-      },
-      error_file: "C:/Apps/elitetime/logs/elitetime-error.log",
-      out_file: "C:/Apps/elitetime/logs/elitetime-out.log",
-      log_date_format: "YYYY-MM-DD HH:mm:ss"
-    },
-
-    // ── NestJS backend (remplace elitetime-socket + elitetime-worker) ─────────
     {
       name: "elitetime-backend",
       script: "node",

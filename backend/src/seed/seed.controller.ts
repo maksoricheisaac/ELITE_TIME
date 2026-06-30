@@ -33,6 +33,14 @@ export class SeedController {
     return this.service.seedFirstAdmin();
   }
 
+  @Post('permissions')
+  @HttpCode(HttpStatus.OK)
+  async seedPermissions(@CurrentUser() user: AuthenticatedUser) {
+    if (user.role !== 'admin')
+      throw new ForbiddenException('Réservé aux administrateurs');
+    return this.service.seedPermissions();
+  }
+
   @Post('grant-all')
   @HttpCode(HttpStatus.OK)
   async grantAll(@CurrentUser() user: AuthenticatedUser) {

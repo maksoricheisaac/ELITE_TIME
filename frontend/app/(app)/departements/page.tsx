@@ -1,4 +1,6 @@
 
+export const dynamic = 'force-dynamic';
+
 import { requireNavigationAccessById } from '@/lib/navigation-guard';
 import { AccessControl } from '@/lib/security/access-control';
 import { serverGet } from '@/lib/server-api';

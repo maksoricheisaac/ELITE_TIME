@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   decryptUser,
@@ -95,6 +95,9 @@ export class ReportsService {
       this.fetchData(params),
       this.getThresholds(),
     ]);
+    if (users.length === 0) {
+      throw new NotFoundException('Employé introuvable ou inactif');
+    }
     const grouped = groupPointagesByDay(
       users,
       pointages,
@@ -145,6 +148,9 @@ export class ReportsService {
       this.fetchData(params),
       this.getThresholds(),
     ]);
+    if (users.length === 0) {
+      throw new NotFoundException('Employé introuvable ou inactif');
+    }
     const grouped = groupPointagesByDay(
       users,
       pointages,
@@ -210,12 +216,12 @@ export class ReportsService {
     const to = new Date(params.to);
     to.setHours(23, 59, 59, 999);
 
-    const userWhere = {
-      status: 'active' as const,
-      hiddenFromLists: false,
-      includeInReports: true,
-      ...(params.employeeId ? { id: params.employeeId } : {}),
-    };
+    // Pour un rapport individuel (employeeId fourni), on retire les filtres
+    // hiddenFromLists/includeInReports : un manager/admin doit pouvoir exporter
+    // le rapport de tout employé actif, même hors des listes publiques.
+    const userWhere = params.employeeId
+      ? { status: 'active' as const, id: params.employeeId }
+      : { status: 'active' as const, hiddenFromLists: false, includeInReports: true };
 
     const users = await this.prisma.user.findMany({ where: userWhere });
     const decUsers = users.map((u) => decryptUser(u));

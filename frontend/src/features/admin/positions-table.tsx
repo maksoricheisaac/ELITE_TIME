@@ -56,23 +56,45 @@ export function PositionsTable({
     {
       accessorKey: "name",
       header: () => <span>Nom</span>,
-      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+      cell: ({ row }) => (
+        <span className="font-medium block truncate max-w-[120px] sm:max-w-[200px]">
+          {row.original.name}
+        </span>
+      ),
     },
     {
       accessorKey: "department",
-      header: () => <span>Département</span>,
+      header: () => <span className="hidden sm:block">Département</span>,
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">{row.original.department.name}</span>
+        <span className="hidden sm:block text-sm text-muted-foreground truncate max-w-[140px]">
+          {row.original.department.name}
+        </span>
       ),
     },
     {
       accessorKey: "description",
       header: () => <span>Description</span>,
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {row.original.description || "-"}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const desc = row.original.description;
+        if (!desc) return <span className="text-sm text-muted-foreground">-</span>;
+        const truncated = desc.length > 50 ? desc.slice(0, 50).trimEnd() + "…" : desc;
+        return (
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-sm text-muted-foreground cursor-default block truncate max-w-[140px] sm:max-w-[250px]">
+                  {truncated}
+                </span>
+              </TooltipTrigger>
+              {desc.length > 50 && (
+                <TooltipContent className="max-w-xs whitespace-pre-wrap">
+                  {desc}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        );
+      },
     },
     {
       id: "actions",

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { redirect } from "next/navigation";
 import { serverGet } from "@/lib/server-api";
 import type { User, Absence, Pointage, Break, SystemSettings } from "@/types/models";
