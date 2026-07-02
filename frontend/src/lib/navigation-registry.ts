@@ -38,6 +38,13 @@ export type NavigationItem = {
    * Utile pour les sous-pages dynamiques qui ont leurs propres règles d'accès.
    */
   hiddenFromSidebar?: boolean;
+  /**
+   * L'utilisateur doit avoir l'un de ces rôles (indépendamment de ses permissions)
+   * pour voir/accéder à cet item. À utiliser uniquement quand l'accès dépend de la
+   * nature du rôle (ex : seuls les employés pointent) et non des permissions
+   * accordées, qui peuvent varier indépendamment du rôle.
+   */
+  requiredRoles?: UserRole[];
 };
 
 export type NavigationGroup = {
@@ -113,9 +120,12 @@ export const navigationRegistry: NavigationGroup[] = [
         icon: FileText,
         label: 'Mon rapport',
         // Tableau de bord personnel basé sur les pointages de l'utilisateur.
-        // Seuls les employés pointent : masqué pour les managers/admins qui ont
-        // la vue équipe ou globale sur les pointages (même logique que "Mes pointages").
-        excludeWhenHasAny: ['pointages.view_team', 'pointages.view_all'],
+        // Seuls les employés pointent : réservé au rôle "employee", quelles que
+        // soient ses permissions individuelles (voir requiredRoles ci-dessous).
+        // Ne PAS utiliser excludeWhenHasAny/requiredPermissions ici : un employé
+        // peut recevoir des permissions élevées (ex: pointages.view_team) sans
+        // changer de rôle, et doit quand même conserver l'accès à cette page.
+        requiredRoles: ['employee'],
       },
       {
         // Guard interne — non visible dans la sidebar

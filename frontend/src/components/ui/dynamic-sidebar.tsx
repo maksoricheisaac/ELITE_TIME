@@ -15,6 +15,7 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
+import { useAuth } from '@/contexts/auth-context';
 import logo from '@public/logo/logo.png';
 import Image from 'next/image';
 import { navigationRegistry, type NavigationItem } from '@/lib/navigation-registry';
@@ -22,14 +23,18 @@ import { navigationRegistry, type NavigationItem } from '@/lib/navigation-regist
 type SidebarItem = Pick<NavigationItem, 'to' | 'icon' | 'label'>;
 
 /**
- * Sidebar 100% permission-driven.
- * Aucune logique de rôle — seules les permissions backend font foi.
+ * Sidebar principalement permission-driven.
+ * Seules les permissions backend font foi, sauf pour les items déclarant
+ * `requiredRoles` (ex : "Mon rapport", réservé au rôle "employee" quelles
+ * que soient ses permissions individuelles).
  * Un item est visible si :
+ *   • requiredRoles défini → l'utilisateur doit avoir l'un de ces rôles
  *   • requiredPermissions absent ou vide → toujours visible (item universel)
  *   • requiredPermissions défini → l'utilisateur doit en avoir AU MOINS UNE
  */
 export const DynamicSidebar = memo(() => {
   const { has, loading } = useUserPermissions();
+  const { user } = useAuth();
   const pathname = usePathname();
 
   const registryItems: NavigationItem[] = navigationRegistry.flatMap((g) => g.items);
@@ -37,6 +42,7 @@ export const DynamicSidebar = memo(() => {
   const isVisible = (item: NavigationItem): boolean => {
     if (loading) return false;
     if (item.hiddenFromSidebar) return false;
+    if (item.requiredRoles && (!user || !item.requiredRoles.includes(user.role))) return false;
     // Masquer si l'utilisateur a un accès supérieur (ex : vue équipe remplace vue self)
     if (item.excludeWhenHasAny?.some((p) => has(p))) return false;
     const required = item.requiredPermissions ?? [];

@@ -3,7 +3,7 @@ import {
   getUserPermissions,
   type AuthContext,
 } from "@/lib/security/rbac";
-import { navigationRegistry, type NavigationItem } from "@/lib/navigation-registry";
+import { navigationRegistry, type NavigationItem, type UserRole } from "@/lib/navigation-registry";
 import { redirect } from "next/navigation";
 
 const registryItems: NavigationItem[] = navigationRegistry.flatMap((g) => g.items);
@@ -22,12 +22,16 @@ function resolveItemsByPath(pathname: string): NavigationItem[] {
  * Vérifie si un utilisateur peut accéder à un item de navigation.
  *
  * Règles :
+ *   • requiredRoles défini → l'utilisateur doit avoir l'un de ces rôles
+ *     (indépendamment de ses permissions individuelles)
  *   • requiredPermissions défini → l'utilisateur doit en avoir AU MOINS UNE
  *   • requiredPermissions absent → accessible à tout utilisateur authentifié
  *   • excludeWhenHasAny défini → masqué si l'utilisateur possède l'une d'elles
  *     (ex : "Mes pointages" masqué quand l'utilisateur a l'accès équipe)
  */
-function canAccess(item: NavigationItem, permissionSet: Set<string>): boolean {
+function canAccess(item: NavigationItem, permissionSet: Set<string>, userRole: UserRole): boolean {
+  if (item.requiredRoles && !item.requiredRoles.includes(userRole)) return false;
+
   // Exclure si l'utilisateur possède l'une des permissions de remplacement
   if (item.excludeWhenHasAny?.some((p) => permissionSet.has(p))) return false;
 
@@ -70,7 +74,7 @@ async function resolveAccess(item?: NavigationItem): Promise<AuthContext> {
     throw new Error("unreachable");
   }
 
-  if (!canAccess(item, permissionSet)) {
+  if (!canAccess(item, permissionSet, auth.user.role)) {
     redirect("/403");
     throw new Error("unreachable");
   }
@@ -113,7 +117,7 @@ export async function requireNavigationAccessByPath(pathname: string): Promise<A
     throw new Error("unreachable");
   }
 
-  const allowed = candidates.some((c) => canAccess(c, permissionSet));
+  const allowed = candidates.some((c) => canAccess(c, permissionSet, auth.user.role));
   if (!allowed) {
     redirect("/403");
     throw new Error("unreachable");
