@@ -69,9 +69,11 @@ export const navigationRegistry: NavigationGroup[] = [
         to: '/mes-pointages',
         icon: Clock,
         label: 'Mes pointages',
-        // Masqué pour les managers/admins qui ont la vue équipe (pointages.view_team ou view_all)
-        // Ces rôles utilisent /pointages à la place.
-        excludeWhenHasAny: ['pointages.view_team', 'pointages.view_all'],
+        // Toujours accessible à un employé, quelles que soient ses permissions
+        // individuelles (ex : pointages.view_team accordé sans changer de rôle).
+        // Masqué uniquement pour les rôles manager/admin/team_lead, qui utilisent
+        // /pointages (vue équipe) à la place. Voir requiredRoles ci-dessous.
+        requiredRoles: ['employee'],
       },
       {
         id: 'pointages',
