@@ -108,6 +108,16 @@ export const navigationRegistry: NavigationGroup[] = [
         requiredPermissions: ['reports.view_all', 'reports.view_team', 'reports.view_self'],
       },
       {
+        id: 'mon-rapport',
+        to: '/mon-rapport',
+        icon: FileText,
+        label: 'Mon rapport',
+        // Tableau de bord personnel basé sur les pointages de l'utilisateur.
+        // Seuls les employés pointent : masqué pour les managers/admins qui ont
+        // la vue équipe ou globale sur les pointages (même logique que "Mes pointages").
+        excludeWhenHasAny: ['pointages.view_team', 'pointages.view_all'],
+      },
+      {
         // Guard interne — non visible dans la sidebar
         // Utilisé pour protéger /reports/[employeeId] (rapport individuel)
         id: 'reports-detail',
