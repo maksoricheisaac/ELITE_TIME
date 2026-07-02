@@ -41,6 +41,7 @@ export class EmailSchedulingController {
       includeCsv?: boolean;
       recipientUserIds?: string[];
       recipientEmails?: string[];
+      dailyReportMode?: 'TODAY' | 'YESTERDAY';
     },
   ) {
     return this.service.update(body);

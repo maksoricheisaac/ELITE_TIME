@@ -111,7 +111,17 @@ export class EmailSchedulingService {
     includeCsv?: boolean;
     recipientUserIds?: string[];
     recipientEmails?: string[];
+    dailyReportMode?: 'TODAY' | 'YESTERDAY';
   }) {
+    if (data.dailyReportMode !== undefined) {
+      const existing = await this.prisma.systemSettings.findFirst();
+      if (existing) {
+        await this.prisma.systemSettings.update({
+          where: { id: existing.id },
+          data: { dailyReportMode: data.dailyReportMode },
+        });
+      }
+    }
     const job = await this.prisma.scheduledEmailJob.upsert({
       where: { type: data.type },
       update: {

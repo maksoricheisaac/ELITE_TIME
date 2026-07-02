@@ -11,7 +11,6 @@ import { Plus, Trash2, Mail, CalendarDays, Calendar1, CalendarRange, Loader2 } f
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { adminUpdateSystemSettings } from "@/actions/admin/settings";
 import { adminUpdateEmailScheduling } from "@/actions/admin/email-scheduling";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -326,7 +325,6 @@ export default function AdminEmailsClient({ emailScheduling }: AdminEmailsClient
 
     startTransition(async () => {
       try {
-        await adminUpdateSystemSettings({ dailyReportMode });
         await adminUpdateEmailScheduling({
           daily: {
             hour: dailyHm.hour,
@@ -336,6 +334,7 @@ export default function AdminEmailsClient({ emailScheduling }: AdminEmailsClient
             includeCsv: false,
             recipientUserIds: Array.from(dailyRecipientIds),
             recipientEmails: Array.from(dailyRecipientEmails),
+            dailyReportMode,
           },
           weekly: {
             hour: weeklyHm.hour,

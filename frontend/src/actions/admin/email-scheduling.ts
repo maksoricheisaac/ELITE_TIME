@@ -47,6 +47,7 @@ type SingleJobInput = {
   includeCsv?: boolean;
   recipientUserIds?: string[];
   recipientEmails?: string[];
+  dailyReportMode?: "TODAY" | "YESTERDAY";
 };
 
 type MultiJobInput = {
