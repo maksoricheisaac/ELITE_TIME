@@ -18,6 +18,7 @@ import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { navigationRegistry, type NavigationItem } from '@/lib/navigation-registry';
 import logo from '@public/logo/logo.png';
 import Image from 'next/image';
+import { useSidebar } from '@/components/ui/sidebar';
 
 /**
  * Sidebar 100% permission-driven.
@@ -26,6 +27,11 @@ import Image from 'next/image';
 export const AdminSidebar = memo(() => {
   const { has, loading, refetch } = useUserPermissions();
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleNavigate = useCallback(() => {
+    if (isMobile) setOpenMobile(false);
+  }, [isMobile, setOpenMobile]);
 
   const shouldShowMenuItem = useCallback((item: NavigationItem): boolean => {
     if (loading) return false;
@@ -77,6 +83,7 @@ export const AdminSidebar = memo(() => {
               <Link
                 prefetch={false}
                 href="/dashboard"
+                onClick={handleNavigate}
                 className="flex items-center justify-center w-full h-full"
               >
                 <div className="flex items-center justify-center h-full transition-all duration-200 group-data-[collapsible=icon]:h-10">
@@ -117,6 +124,7 @@ export const AdminSidebar = memo(() => {
                         <Link
                           prefetch={false}
                           href={mi.to}
+                          onClick={handleNavigate}
                           aria-current={isActive ? 'page' : undefined}
                           className="flex w-full items-center gap-3 px-3 py-2.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0"
                         >

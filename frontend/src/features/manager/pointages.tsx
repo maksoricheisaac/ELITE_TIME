@@ -835,11 +835,14 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
         return (
 
-          <span className="font-medium">
-
-            {employee.firstname} {employee.lastname}
-
-          </span>
+          <div className="flex flex-col min-w-0">
+            <span className="font-medium truncate">
+              {employee.firstname} {employee.lastname}
+            </span>
+            <span className="text-xs text-muted-foreground truncate sm:hidden">
+              {employee.department}
+            </span>
+          </div>
 
         );
 
@@ -852,6 +855,8 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
       accessorKey: "department",
 
       header: () => <span>Département</span>,
+
+      meta: { className: "hidden sm:table-cell" },
 
       cell: ({ row }) => <span>{row.original.employee.department}</span>,
 
@@ -882,6 +887,7 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
     {
       accessorKey: "exitTime",
       header: () => <span>Sortie</span>,
+      meta: { className: "hidden sm:table-cell" },
       cell: ({ row }) =>
         isSingleDay ? (
           <div className="flex flex-col gap-1">
@@ -913,6 +919,8 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
         accessorKey: "reasons",
 
         header: () => <span>Motifs</span>,
+
+        meta: { className: "hidden lg:table-cell" },
 
         cell: ({ row }) => {
           const pointages = (row.original as TodayRow).allPointages;
@@ -960,6 +968,8 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
       header: () => <span>Début pause</span>,
 
+      meta: { className: "hidden lg:table-cell" },
+
       cell: ({ row }) => {
 
         if (!isSingleDay) return <span>{(row.original as AverageRow).avgBreakStart}</span>;
@@ -996,6 +1006,8 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
       header: () => <span>Fin pause</span>,
 
+      meta: { className: "hidden lg:table-cell" },
+
       cell: ({ row }) => {
 
         if (!isSingleDay) return <span>{(row.original as AverageRow).avgBreakEnd}</span>;
@@ -1031,6 +1043,8 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
       id: "breakDuration",
 
       header: () => <span>Durée pauses</span>,
+
+      meta: { className: "hidden xl:table-cell" },
 
       cell: ({ row }) => {
 

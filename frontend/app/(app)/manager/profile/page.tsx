@@ -60,7 +60,7 @@ export default async function AppManagerProfile() {
           <CardContent className="space-y-4">
             <form action={updateEmployeeProfileAction} className="space-y-4">
               <input type="hidden" name="userId" value={user!.id} />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="firstname">Prénom</Label>
                   <Input id="firstname" name="firstname" defaultValue={user!.firstname ?? ''} />

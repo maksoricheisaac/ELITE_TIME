@@ -71,7 +71,7 @@ export default async function AppPositionsPage({
         description="Gérez les postes disponibles par département."
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border-border/50 py-0">
           <CardContent className="p-3">
             <div className="flex items-center justify-between gap-2">

@@ -397,17 +397,17 @@ export default function AdminEmailsClient({ emailScheduling }: AdminEmailsClient
       {/* Tabs */}
       <Tabs defaultValue="daily" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="daily" className="gap-2">
-            <Calendar1 className="h-4 w-4" />
-            Journalier
+          <TabsTrigger value="daily" className="gap-1.5 px-1.5 sm:gap-2 sm:px-3">
+            <Calendar1 className="h-4 w-4 shrink-0" />
+            <span className="truncate">Journalier</span>
           </TabsTrigger>
-          <TabsTrigger value="weekly" className="gap-2">
-            <CalendarDays className="h-4 w-4" />
-            Hebdomadaire
+          <TabsTrigger value="weekly" className="gap-1.5 px-1.5 sm:gap-2 sm:px-3">
+            <CalendarDays className="h-4 w-4 shrink-0" />
+            <span className="truncate">Hebdomadaire</span>
           </TabsTrigger>
-          <TabsTrigger value="monthly" className="gap-2">
-            <CalendarRange className="h-4 w-4" />
-            Mensuel
+          <TabsTrigger value="monthly" className="gap-1.5 px-1.5 sm:gap-2 sm:px-3">
+            <CalendarRange className="h-4 w-4 shrink-0" />
+            <span className="truncate">Mensuel</span>
           </TabsTrigger>
         </TabsList>
 

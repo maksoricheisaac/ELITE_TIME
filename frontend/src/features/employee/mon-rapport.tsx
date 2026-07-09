@@ -231,7 +231,7 @@ export default function MonRapportClient({
           <CardDescription>Vue d&apos;ensemble de votre activité sur la période sélectionnée.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               icon={CheckCircle2}
               label="Présence globale"
@@ -287,7 +287,7 @@ export default function MonRapportClient({
           <CardDescription>Suivi de vos retards sur la période.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard icon={AlarmClockOff} label="Nombre de retards" value={String(stats.lateCount)} accent="text-amber-600 dark:text-amber-400" />
             <StatCard icon={Hourglass} label="Durée totale des retards" value={formatMinutesHuman(stats.totalLateMinutes)} />
             <StatCard icon={Hourglass} label="Durée moyenne des retards" value={formatMinutesHuman(stats.avgLateMinutes)} />

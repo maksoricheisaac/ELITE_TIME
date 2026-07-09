@@ -51,6 +51,7 @@ const logColumns: ColumnDef<ActivityLogWithUser>[] = [
   {
     accessorKey: "type",
     header: () => <span>Type</span>,
+    meta: { className: "hidden sm:table-cell" },
     cell: ({ row }) => <span>{row.original.type}</span>,
   },
   {
@@ -61,6 +62,7 @@ const logColumns: ColumnDef<ActivityLogWithUser>[] = [
   {
     accessorKey: "details",
     header: () => <span>Détails</span>,
+    meta: { className: "hidden md:table-cell" },
     cell: ({ row }) => (
       <span className="max-w-[360px] truncate" title={row.original.details}>
         {row.original.details}
@@ -70,6 +72,7 @@ const logColumns: ColumnDef<ActivityLogWithUser>[] = [
   {
     accessorKey: "timestamp",
     header: () => <span>Date &amp; heure</span>,
+    meta: { className: "hidden lg:table-cell" },
     cell: ({ row }) => (
       <span className="whitespace-nowrap text-xs text-muted-foreground">
         {new Date(row.original.timestamp).toLocaleString("fr-FR", {
@@ -192,7 +195,7 @@ export default function LogsClient({ logs: logsData, employees, resolvedFrom, re
       </div>
 
       {/* Statistiques */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { type: "auth", label: "Connexions", count: logs.filter((l) => l.type === "auth").length },
           { type: "pointage", label: "Pointages", count: logs.filter((l) => l.type === "pointage").length },

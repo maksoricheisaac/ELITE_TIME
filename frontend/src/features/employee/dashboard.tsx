@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useNotification } from "@/contexts/notification-context";
 import { formatMinutesHuman } from "@/lib/time-format";
 import { useRealtime } from "@/contexts/realtime-context";
-import { Coffee, AlertTriangle } from "lucide-react";
+import { Coffee, AlertTriangle, Loader2 } from "lucide-react";
 import type { SafeUser } from "@/lib/session";
 import type { Pointage, Break as BreakModel } from "@/types/models";
 import { useRouter } from "next/navigation";
@@ -1105,7 +1105,14 @@ export default function EmployeeDashboardClient({
 
 			>
 
-				{primaryCtaLabel}
+				{isPending ? (
+					<>
+						<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+						Enregistrement…
+					</>
+				) : (
+					primaryCtaLabel
+				)}
 
 			</Button>
 
@@ -1117,7 +1124,11 @@ export default function EmployeeDashboardClient({
 						variant="outline"
 						className="h-10 text-sm font-medium cursor-pointer"
 					>
-						<Coffee className="mr-2 h-4 w-4" />
+						{isPending ? (
+							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+						) : (
+							<Coffee className="mr-2 h-4 w-4" />
+						)}
 						Terminer la pause
 					</Button>
 				) : (
@@ -1127,7 +1138,11 @@ export default function EmployeeDashboardClient({
 						variant="outline"
 						className="h-10 text-sm font-medium cursor-pointer"
 					>
-						<Coffee className="mr-2 h-4 w-4" />
+						{isPending ? (
+							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+						) : (
+							<Coffee className="mr-2 h-4 w-4" />
+						)}
 						Démarrer une pause
 					</Button>
 				)

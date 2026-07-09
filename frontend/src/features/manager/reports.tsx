@@ -390,11 +390,14 @@ export default function ManagerReportsClient({
 
           return (
 
-            <span className="font-medium">
-
-              {employee.firstname} {employee.lastname}
-
-            </span>
+            <div className="flex flex-col min-w-0">
+              <span className="font-medium truncate">
+                {employee.firstname} {employee.lastname}
+              </span>
+              <span className="text-xs text-muted-foreground truncate md:hidden">
+                {employee.department}
+              </span>
+            </div>
 
           );
 
@@ -408,6 +411,8 @@ export default function ManagerReportsClient({
 
         header: () => <span>Département</span>,
 
+        meta: { className: "hidden md:table-cell" },
+
         cell: ({ row }) => <span>{row.original.employee.department}</span>,
 
       },
@@ -417,6 +422,8 @@ export default function ManagerReportsClient({
         accessorKey: "source",
 
         header: () => <span>Source</span>,
+
+        meta: { className: "hidden sm:table-cell" },
 
         cell: ({ row }) => {
 
@@ -446,7 +453,7 @@ export default function ManagerReportsClient({
 
         header: () => <span>Heures travaillées</span>,
 
-        cell: ({ row }) => <span>{formatMinutesHuman(row.original.totalWorkMinutes)}</span>,
+        cell: ({ row }) => <span className="whitespace-nowrap">{formatMinutesHuman(row.original.totalWorkMinutes)}</span>,
 
       },
 
@@ -455,6 +462,8 @@ export default function ManagerReportsClient({
         accessorKey: "lateCount",
 
         header: () => <span>Retards</span>,
+
+        meta: { className: "hidden sm:table-cell" },
 
         cell: ({ row }) => {
 
@@ -472,6 +481,8 @@ export default function ManagerReportsClient({
 
         header: () => <span>Absences</span>,
 
+        meta: { className: "hidden sm:table-cell" },
+
         cell: ({ row }) => {
 
           const value = row.original.absenceCount;
@@ -487,6 +498,8 @@ export default function ManagerReportsClient({
         accessorKey: "overtimeMinutes",
 
         header: () => <span>Heures sup</span>,
+
+        meta: { className: "hidden lg:table-cell" },
 
         cell: ({ row }) => {
 

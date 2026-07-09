@@ -64,9 +64,10 @@ export function PositionsTable({
     },
     {
       accessorKey: "department",
-      header: () => <span className="hidden sm:block">Département</span>,
+      header: () => <span>Département</span>,
+      meta: { className: "hidden lg:table-cell" },
       cell: ({ row }) => (
-        <span className="hidden sm:block text-sm text-muted-foreground truncate max-w-[140px]">
+        <span className="text-sm text-muted-foreground truncate max-w-[140px] block">
           {row.original.department.name}
         </span>
       ),
@@ -74,6 +75,7 @@ export function PositionsTable({
     {
       accessorKey: "description",
       header: () => <span>Description</span>,
+      meta: { className: "hidden sm:table-cell" },
       cell: ({ row }) => {
         const desc = row.original.description;
         if (!desc) return <span className="text-sm text-muted-foreground">-</span>;

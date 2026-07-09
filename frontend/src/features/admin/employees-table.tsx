@@ -406,7 +406,7 @@ export default function EmployeesTable({
     {
       accessorKey: "department",
       header: () => <span>Département</span>,
-      meta: { className: "hidden md:table-cell" },
+      meta: { className: "hidden lg:table-cell" },
       cell: ({ row }) => (
         <span className="text-sm">{row.original.department || "—"}</span>
       ),

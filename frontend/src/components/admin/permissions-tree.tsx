@@ -110,8 +110,8 @@ export function PermissionsTree({ permissions }: PermissionsTreeProps) {
           {totalFiltered} permission{totalFiltered !== 1 ? 's' : ''} — {groupedByModule.length} module{groupedByModule.length !== 1 ? 's' : ''}
         </span>
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={expandAll}>Tout déplier</Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={collapseAll}>Tout replier</Button>
+          <Button variant="ghost" size="sm" className="h-9 text-xs" onClick={expandAll}>Tout déplier</Button>
+          <Button variant="ghost" size="sm" className="h-9 text-xs" onClick={collapseAll}>Tout replier</Button>
         </div>
       </div>
 

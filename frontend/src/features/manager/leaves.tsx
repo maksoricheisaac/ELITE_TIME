@@ -187,6 +187,7 @@ export default function LeaveManagementClient({ team, absences }: LeaveManagemen
     {
       accessorKey: "reason",
       header: () => <span>Raison</span>,
+      meta: { className: "hidden md:table-cell" },
       cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.reason}</span>,
     },
     {
@@ -394,7 +395,7 @@ export default function LeaveManagementClient({ team, absences }: LeaveManagemen
         </p>
       </div>
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border border-border/80 bg-card/90 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total congés</CardTitle>
@@ -474,7 +475,7 @@ export default function LeaveManagementClient({ team, absences }: LeaveManagemen
             </div>
 
             {/* Ligne 2 : Dates début / fin */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Début</Label>
                 <DatePicker
