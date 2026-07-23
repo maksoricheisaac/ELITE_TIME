@@ -19,7 +19,10 @@ export function proxy(request: NextRequest) {
   if (
     pathname.startsWith('/_next') ||
     pathname === '/favicon.ico' ||
-    pathname === '/robots.txt'
+    pathname === '/robots.txt' ||
+    pathname === '/manifest.webmanifest' ||
+    pathname === '/sw.js' ||
+    pathname.startsWith('/icons/')
   ) {
     return NextResponse.next()
   }

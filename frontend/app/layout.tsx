@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
@@ -7,6 +7,8 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { NotificationProvider } from "@/contexts/notification-context";
 import { RealtimeProvider } from "@/contexts/realtime-context";
 import { Toaster } from "@/components/ui/sonner";
+import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 export const metadata: Metadata = {
   title: {
@@ -25,6 +27,19 @@ export const metadata: Metadata = {
     "Elite Time",
   ],
   authors: [{ name: "Elite Network" }],
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Elite Time",
+  },
   openGraph: {
     title: "Elite Time – Gestion du temps de travail",
     description:
@@ -42,6 +57,12 @@ export const metadata: Metadata = {
   }
 };
 
+export const viewport: Viewport = {
+  themeColor: "#0b84c6",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -49,6 +70,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
+      <head>
+        {/* Next 16 émet "mobile-web-app-capable" ; iOS Safari ne lit que le préfixe apple- */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+      </head>
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
@@ -67,6 +92,8 @@ export default function RootLayout({
             </AuthProvider>
           </NotificationProvider>
         </ThemeProvider>
+        <ServiceWorkerRegister />
+        <InstallPrompt />
       </body>
     </html>
   );

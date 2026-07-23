@@ -44,7 +44,7 @@ export class EmailSchedulingService {
     ]);
 
     const eligibleUsers = rawUsers.map((u) => {
-      const dec = decryptUser(u as any);
+      const dec = decryptUser(u);
       return {
         id: u.id,
         username: u.username,
@@ -89,9 +89,7 @@ export class EmailSchedulingService {
     return {
       eligibleUsers,
       timezone: settings?.timezone ?? 'Europe/Paris',
-      dailyReportMode: (settings?.dailyReportMode ?? 'YESTERDAY') as
-        | 'TODAY'
-        | 'YESTERDAY',
+      dailyReportMode: settings?.dailyReportMode ?? 'YESTERDAY',
       daily: findJob('DAILY_REPORT'),
       weekly: findJob('WEEKLY_REPORT'),
       monthly: findJob('MONTHLY_REPORT'),

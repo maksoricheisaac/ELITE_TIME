@@ -79,7 +79,8 @@ export class SearchEmployeeTool implements AiTool {
       let results = users
         .map((u) => decryptUser(u))
         .filter((u) => {
-          const fullName = `${u.firstname ?? ''} ${u.lastname ?? ''}`.toLowerCase();
+          const fullName =
+            `${u.firstname ?? ''} ${u.lastname ?? ''}`.toLowerCase();
           return (
             fullName.includes(query) ||
             (u.username ?? '').toLowerCase().includes(query)

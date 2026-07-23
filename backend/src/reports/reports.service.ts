@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   decryptUser,
@@ -221,7 +225,11 @@ export class ReportsService {
     // le rapport de tout employé actif, même hors des listes publiques.
     const userWhere = params.employeeId
       ? { status: 'active' as const, id: params.employeeId }
-      : { status: 'active' as const, hiddenFromLists: false, includeInReports: true };
+      : {
+          status: 'active' as const,
+          hiddenFromLists: false,
+          includeInReports: true,
+        };
 
     const users = await this.prisma.user.findMany({ where: userWhere });
     const decUsers = users.map((u) => decryptUser(u));
