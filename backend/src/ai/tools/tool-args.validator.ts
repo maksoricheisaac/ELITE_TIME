@@ -16,7 +16,12 @@ const DATE_REGEX = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const YEAR_REGEX = /^\d{4}$/;
 
 const VALID_PERIODS = ['today', 'week', 'month'] as const;
-const VALID_STATUSES = ['pending', 'approved', 'rejected'] as const;
+const VALID_STATUSES = [
+  'pending',
+  'approved',
+  'rejected',
+  'cancelled',
+] as const;
 
 /** Vérifie que la date YYYY-MM-DD est valide et non dans un futur lointain (max +1 jour) */
 function isValidDate(dateStr: string): boolean {

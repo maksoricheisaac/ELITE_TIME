@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { AbsencesController } from './absences.controller';
 import { AbsencesService } from './absences.service';
 import { AuthModule } from '../auth/auth.module';
+import { WebsocketModule } from '../websocket/websocket.module';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, WebsocketModule],
   controllers: [AbsencesController],
   providers: [AbsencesService],
   exports: [AbsencesService],

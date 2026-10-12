@@ -671,31 +671,6 @@ const PERMISSIONS = [
     riskLevel: 'MEDIUM',
   }),
 
-  // ── VALIDATIONS ──────────────────────────────────────────────────────────────
-  perm({
-    name: 'validations.view_team',
-    description: 'Voir les validations en attente pour son équipe',
-    category: 'validations',
-  }),
-  perm({
-    name: 'validations.view_all',
-    description: 'Voir toutes les validations en attente',
-    category: 'validations',
-    riskLevel: 'MEDIUM',
-  }),
-  perm({
-    name: 'validations.approve',
-    description: 'Valider une demande',
-    category: 'validations',
-    riskLevel: 'HIGH',
-  }),
-  perm({
-    name: 'validations.reject',
-    description: 'Rejeter une demande',
-    category: 'validations',
-    riskLevel: 'HIGH',
-  }),
-
   // ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
   perm({
     name: 'notifications.view',

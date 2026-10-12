@@ -56,7 +56,7 @@ export class GetMyLeavesSummaryTool implements AiTool {
       });
 
       let joursCongesApprouvés = 0;
-      const byStatus = { pending: 0, approved: 0, rejected: 0 };
+      const byStatus = { pending: 0, approved: 0, rejected: 0, cancelled: 0 };
       const byType = { conge: 0, maladie: 0, autre: 0 };
 
       for (const a of absences) {
@@ -79,6 +79,7 @@ export class GetMyLeavesSummaryTool implements AiTool {
           enAttente: byStatus.pending,
           approuvées: byStatus.approved,
           refusées: byStatus.rejected,
+          annulées: byStatus.cancelled,
           joursCongesPayésApprouvés: joursCongesApprouvés,
           répartitionParType: {
             congéPayé: byType.conge,

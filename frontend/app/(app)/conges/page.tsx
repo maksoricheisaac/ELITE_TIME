@@ -10,12 +10,10 @@ import type { User, Absence } from "@/types/models";
 async function fetchTeamAbsences(
   team: User[],
 ): Promise<(Absence & { user: Pick<User, "id" | "firstname" | "lastname" | "department" | "position"> })[]> {
-  const allAbsences = await Promise.all(
-    team.map((u) => serverGet<Absence[]>(`/absences?userId=${u.id}`)),
-  );
+  const teamById = new Map(team.map((u) => [u.id, u]));
+  const allAbsences = (await serverGet<Absence[]>(`/absences/team`)) ?? [];
   return allAbsences
-    .flat()
-    .filter((a) => a.type === "conge")
+    .filter((a) => a.type === "conge" && teamById.has(a.userId))
     .sort(
       (a, b) =>
         new Date(b.startDate as unknown as string).getTime() -
@@ -23,7 +21,7 @@ async function fetchTeamAbsences(
     )
     .map((a) => ({
       ...a,
-      user: team.find((u) => u.id === a.userId) as Pick<
+      user: teamById.get(a.userId) as Pick<
         User,
         "id" | "firstname" | "lastname" | "department" | "position"
       >,
@@ -35,10 +33,12 @@ export default async function AppLeavesPage() {
   let absences: (Absence & {
     user: Pick<User, "id" | "firstname" | "lastname" | "department" | "position">;
   })[] = [];
+  let currentUserRole: User["role"] = "employee";
 
   try {
     const auth = await requireNavigationAccessById("conges");
     const currentUser = auth.user;
+    currentUserRole = currentUser.role;
 
     // Routing basé uniquement sur les permissions — aucune logique de rôle
     const permissions = await getUserPermissions(currentUser.id);
@@ -55,7 +55,7 @@ export default async function AppLeavesPage() {
     } else {
       // Accès équipe : filtré par département (absences.view_team ou absences.approve)
       if (!currentUser.department) {
-        return <LeaveManagementClient team={[]} absences={[]} />;
+        return <LeaveManagementClient team={[]} absences={[]} currentUserRole={currentUserRole} />;
       }
 
       const { users: teamUsers } = await serverGet<{ users: User[]; total: number }>(
@@ -67,7 +67,7 @@ export default async function AppLeavesPage() {
     }
 
     if (team.length === 0) {
-      return <LeaveManagementClient team={[]} absences={[]} />;
+      return <LeaveManagementClient team={[]} absences={[]} currentUserRole={currentUserRole} />;
     }
 
     absences = await fetchTeamAbsences(team);
@@ -78,5 +78,5 @@ export default async function AppLeavesPage() {
     redirect('/403');
   }
 
-  return <LeaveManagementClient team={team} absences={absences} />;
+  return <LeaveManagementClient team={team} absences={absences} currentUserRole={currentUserRole} />;
 }

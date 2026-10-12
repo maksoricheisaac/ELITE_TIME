@@ -10,3 +10,8 @@ export const AbsenceSchema = z.object({
 });
 
 export type AbsenceData = z.infer<typeof AbsenceSchema>;
+
+/** Formulaire self-service : userId déduit de la session, comment réservé au backend (motif de rejet). */
+export const CreateAbsenceSchema = AbsenceSchema.omit({ userId: true, comment: true });
+
+export type CreateAbsenceData = z.infer<typeof CreateAbsenceSchema>;

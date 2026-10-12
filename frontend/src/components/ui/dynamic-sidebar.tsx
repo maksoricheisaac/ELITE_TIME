@@ -31,6 +31,8 @@ type SidebarItem = Pick<NavigationItem, 'to' | 'icon' | 'label'>;
  *   • requiredRoles défini → l'utilisateur doit avoir l'un de ces rôles
  *   • requiredPermissions absent ou vide → toujours visible (item universel)
  *   • requiredPermissions défini → l'utilisateur doit en avoir AU MOINS UNE
+ *   • excludeWhenHasAny défini → masqué si l'utilisateur possède l'une d'elles,
+ *     SAUF pour l'admin qui garde l'accès à ses propres données personnelles.
  */
 export const DynamicSidebar = memo(() => {
   const { has, loading } = useUserPermissions();
@@ -44,7 +46,8 @@ export const DynamicSidebar = memo(() => {
     if (item.hiddenFromSidebar) return false;
     if (item.requiredRoles && (!user || !item.requiredRoles.includes(user.role))) return false;
     // Masquer si l'utilisateur a un accès supérieur (ex : vue équipe remplace vue self)
-    if (item.excludeWhenHasAny?.some((p) => has(p))) return false;
+    // (sauf admin : il garde l'accès à ses propres données personnelles).
+    if (user?.role !== 'admin' && item.excludeWhenHasAny?.some((p) => has(p))) return false;
     const required = item.requiredPermissions ?? [];
     if (required.length === 0) return true;
     return required.some((p) => has(p));

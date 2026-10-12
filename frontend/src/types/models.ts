@@ -6,7 +6,7 @@ export type PointageStatus = "normal" | "late" | "incomplete" | "admin_closed";
 export type PointageSource = "EMPLOYEE" | "ADMIN" | "MANAGER";
 export type PointedBy = "employee" | "admin" | "manager";
 export type AbsenceType = "conge" | "maladie" | "autre";
-export type AbsenceStatus = "pending" | "approved" | "rejected";
+export type AbsenceStatus = "pending" | "approved" | "rejected" | "cancelled";
 export type CorrectionStatus = "pending" | "approved" | "rejected";
 export type ActivityType = "auth" | "pointage" | "absence" | "user" | "validation";
 export type ScheduledEmailType = "DAILY_REPORT" | "WEEKLY_REPORT" | "MONTHLY_REPORT";
@@ -69,7 +69,12 @@ export interface Absence {
   reason: string;
   status: AbsenceStatus;
   comment: string | null;
+  approvedById: string | null;
+  rejectedById: string | null;
+  approvedBy?: { id: string; firstname: string; lastname: string } | null;
+  rejectedBy?: { id: string; firstname: string; lastname: string } | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CorrectionRequest {

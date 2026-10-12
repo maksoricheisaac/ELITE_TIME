@@ -1,9 +1,11 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { io, type Socket } from "socket.io-client";
 import { useAuth } from "@/contexts/auth-context";
 import { useNotification } from "@/contexts/notification-context";
+import { useUserPermissions } from "@/hooks/use-user-permissions";
 
 export type LateAlertPayload = {
   userId: string;
@@ -33,6 +35,19 @@ export type AdminClosurePayload = {
   timestamp: string;
 };
 
+export type LeaveStatusChangedPayload = {
+  absenceId: string;
+  status: "approved" | "rejected" | "cancelled";
+  comment?: string;
+};
+
+export type LeaveRequestCreatedPayload = {
+  absenceId: string;
+  userId: string;
+  userName: string;
+  department: string | null;
+};
+
 interface RealtimeContextType {
   lateAlerts: LateAlertPayload[];
   clearLateAlerts: () => void;
@@ -49,7 +64,9 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const [lateAlerts, setLateAlerts] = useState<LateAlertPayload[]>([]);
   const [adminClosureAlerts, setAdminClosureAlerts] = useState<AdminClosurePayload[]>([]);
   const socketRef = useRef<Socket | null>(null);
-  const { showInfo } = useNotification();
+  const { showInfo, showSuccess } = useNotification();
+  const { has: hasPermission } = useUserPermissions();
+  const router = useRouter();
 
   useEffect(() => {
     if (!user) {
@@ -97,18 +114,39 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       setAdminClosureAlerts((prev) => [...prev, payload]);
     };
 
+    const handleLeaveStatusChanged = (payload: LeaveStatusChangedPayload) => {
+      if (payload.status === "approved") {
+        showSuccess("Votre demande de congé a été approuvée.");
+      } else if (payload.status === "rejected") {
+        showInfo("Votre demande de congé a été refusée.");
+      } else {
+        showInfo("Votre demande de congé a été annulée.");
+      }
+      router.refresh();
+    };
+
+    const handleLeaveRequestCreated = (payload: LeaveRequestCreatedPayload) => {
+      if (!hasPermission("absences.approve")) return;
+      showInfo(`Nouvelle demande de congé de ${payload.userName}.`);
+      router.refresh();
+    };
+
     socket.on("employee_late_alert", handleLateAlert);
     socket.on("employee_pointage_exit_reminder", handlePointageExitReminder);
     socket.on("pointage_admin_closure", handleAdminClosure);
+    socket.on("leave_status_changed", handleLeaveStatusChanged);
+    socket.on("leave_request_created", handleLeaveRequestCreated);
 
     return () => {
       socket.off("employee_late_alert", handleLateAlert);
       socket.off("employee_pointage_exit_reminder", handlePointageExitReminder);
       socket.off("pointage_admin_closure", handleAdminClosure);
+      socket.off("leave_status_changed", handleLeaveStatusChanged);
+      socket.off("leave_request_created", handleLeaveRequestCreated);
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [user, showInfo]);
+  }, [user, showInfo, showSuccess, router, hasPermission]);
 
   const clearLateAlerts = () => setLateAlerts([]);
   const clearAdminClosureAlerts = () => setAdminClosureAlerts([]);

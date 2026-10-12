@@ -65,7 +65,7 @@ export default async function AppDashboardPage() {
     ]);
 
   const todayLeave =
-    (todayLeaveAbsences as Absence[]).find((a) => {
+    (todayLeaveAbsences ?? []).find((a) => {
       if (a.type !== "conge" || a.status !== "approved") return false;
       const start = new Date(a.startDate as string);
       const end = new Date(a.endDate as string);

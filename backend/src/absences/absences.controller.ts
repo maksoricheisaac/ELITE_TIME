@@ -18,7 +18,15 @@ import { AuthGuard } from '../auth/guards/auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
+import { ROLE_DEFAULT_PERMISSIONS } from '../auth/guards/permissions.guard';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-request.interface';
+import {
+  CreateAbsenceDto,
+  UpdateOwnAbsenceDto,
+  RejectAbsenceDto,
+  CreateManagedAbsenceDto,
+  UpdateManagedAbsenceDto,
+} from './dto/absence.dto';
 
 @Controller('absences')
 @UseGuards(AuthGuard, PermissionsGuard)
@@ -28,51 +36,100 @@ export class AbsencesController {
     private readonly prisma: PrismaService,
   ) {}
 
-  private async canViewOtherAbsence(user: AuthenticatedUser): Promise<boolean> {
-    if (['admin', 'manager', 'team_lead'].includes(user.role)) return true;
+  /**
+   * Résout l'ensemble complet des permissions de l'utilisateur : permissions
+   * par défaut de son rôle (ROLE_DEFAULT_PERMISSIONS) + permissions accordées
+   * individuellement via UserPermission. Reflète exactement ce que vérifie
+   * PermissionsGuard, pour que les décisions de scope prises ici (accès
+   * équipe vs global) restent cohérentes avec le RBAC réel de l'utilisateur.
+   */
+  private async resolvePermissionSet(
+    user: AuthenticatedUser,
+  ): Promise<Set<string>> {
+    const roleDefaults =
+      ROLE_DEFAULT_PERMISSIONS[user.role] ?? new Set<string>();
     const perms = await this.prisma.userPermission.findMany({
       where: { userId: user.id },
       include: { permission: { select: { name: true } } },
     });
-    const names = new Set(perms.map((p) => p.permission.name));
+    const names = new Set(roleDefaults);
+    for (const p of perms) names.add(p.permission.name);
+    return names;
+  }
+
+  /**
+   * Accès en lecture aux absences d'autrui : admin/manager/team_lead ont les
+   * permissions absences.* par défaut, mais l'accès est aussi accordé via
+   * reports.view_team/view_all car la génération de rapports d'équipe a besoin
+   * de lire les absences des employés du département sans permission absences.*
+   * dédiée. Vérification manuelle (pas de decorator) car il s'agit d'un OR sur
+   * plusieurs permissions — @RequirePermissions applique un AND.
+   */
+  private hasTeamAbsenceAccess(
+    user: AuthenticatedUser,
+    permissionSet: Set<string>,
+  ): boolean {
+    if (user.role === 'admin') return true;
     return (
-      names.has('absences.view_team') ||
-      names.has('absences.view_all') ||
-      names.has('absences.approve') ||
-      // Accès équipe accordé via les permissions rapports (pour la génération de rapports)
-      names.has('reports.view_team') ||
-      names.has('reports.view_all')
+      permissionSet.has('absences.view_team') ||
+      permissionSet.has('absences.view_all') ||
+      permissionSet.has('absences.approve') ||
+      permissionSet.has('reports.view_team') ||
+      permissionSet.has('reports.view_all')
     );
   }
 
   @Get()
+  @RequirePermissions('absences.view_self')
   async get(
     @CurrentUser() user: AuthenticatedUser,
     @Query('userId') userId?: string,
   ) {
-    const canViewOther = await this.canViewOtherAbsence(user);
-    const targetId = userId && canViewOther ? userId : user.id;
-    return this.service.getForUser(targetId);
+    if (userId && userId !== user.id) {
+      const permissionSet = await this.resolvePermissionSet(user);
+      const canViewOther = this.hasTeamAbsenceAccess(user, permissionSet);
+      if (canViewOther) return this.service.getForUser(userId);
+    }
+    return this.service.getForUser(user.id);
   }
 
   @Get('team')
   async getTeam(@CurrentUser() user: AuthenticatedUser) {
-    // Accepte : absences.view_team | absences.view_all | absences.approve
-    //         | reports.view_team  | reports.view_all
-    // (les données d'absences sont nécessaires pour la génération de rapports)
-    const canView = await this.canViewOtherAbsence(user);
+    const permissionSet = await this.resolvePermissionSet(user);
+    const canView = this.hasTeamAbsenceAccess(user, permissionSet);
     if (!canView) throw new ForbiddenException('Permission requise');
-    return this.service.getTeamAbsences(user.id, user.role);
+    const hasFullAccess =
+      user.role === 'admin' || permissionSet.has('absences.view_all');
+    return this.service.getTeamAbsences(user.id, user.role, hasFullAccess);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions('absences.create')
   async request(
     @CurrentUser() user: AuthenticatedUser,
-    @Body()
-    body: { type: string; startDate: string; endDate: string; reason: string },
+    @Body() body: CreateAbsenceDto,
   ) {
     return this.service.request(user.id, body);
+  }
+
+  @Patch(':id')
+  @RequirePermissions('absences.edit')
+  async updateOwn(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() body: UpdateOwnAbsenceDto,
+  ) {
+    return this.service.updateOwn(id, body, user);
+  }
+
+  @Delete(':id')
+  @RequirePermissions('absences.delete')
+  async deleteOwn(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.service.deleteOwn(id, user);
   }
 
   @Patch(':id/approve')
@@ -89,7 +146,7 @@ export class AbsencesController {
   async reject(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
-    @Body() body: { comment?: string },
+    @Body() body: RejectAbsenceDto,
   ) {
     return this.service.reject(id, user, body.comment);
   }
@@ -99,14 +156,7 @@ export class AbsencesController {
   @RequirePermissions('absences.create_managed')
   async createManaged(
     @CurrentUser() user: AuthenticatedUser,
-    @Body()
-    body: {
-      userId: string;
-      type: string;
-      startDate: string;
-      endDate: string;
-      reason: string;
-    },
+    @Body() body: CreateManagedAbsenceDto,
   ) {
     return this.service.createManaged(user, body);
   }
@@ -116,7 +166,7 @@ export class AbsencesController {
   async updateManaged(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
-    @Body() body: { startDate?: string; endDate?: string; reason?: string },
+    @Body() body: UpdateManagedAbsenceDto,
   ) {
     return this.service.updateManaged(id, body, user);
   }
@@ -128,5 +178,19 @@ export class AbsencesController {
     @Param('id') id: string,
   ) {
     return this.service.deleteManaged(id, user);
+  }
+
+  /**
+   * Retire l'absence de l'affichage (manager + employé concerné) sans la
+   * supprimer physiquement ni changer son statut métier — masquage
+   * d'affichage uniquement, la ligne reste récupérable en base de données.
+   */
+  @Patch('managed/:id/hide')
+  @RequirePermissions('absences.delete_managed')
+  async hideManaged(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.service.hideManaged(id, user);
   }
 }

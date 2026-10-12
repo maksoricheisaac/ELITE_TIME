@@ -108,11 +108,6 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, Set<string>> = {
     'ai.chat',
     'ai.view_metrics',
     'ai.view_history',
-    // ── Validations ──
-    'validations.view_team',
-    'validations.view_all',
-    'validations.approve',
-    'validations.reject',
     // ── Auth ──
     'auth.view_sessions',
     'auth.revoke_own_sessions',
@@ -170,10 +165,6 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, Set<string>> = {
     'positions.view',
     // ── IA ──
     'ai.chat',
-    // ── Validations ──
-    'validations.view_team',
-    'validations.approve',
-    'validations.reject',
     // ── Auth ──
     'auth.view_sessions',
     'auth.revoke_own_sessions',
@@ -182,7 +173,13 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, Set<string>> = {
     'notifications.view',
   ]),
 
-  employee: new Set([]),
+  employee: new Set([
+    // ── Absences ──
+    'absences.view_self',
+    'absences.create',
+    'absences.edit',
+    'absences.delete',
+  ]),
 };
 
 @Injectable()

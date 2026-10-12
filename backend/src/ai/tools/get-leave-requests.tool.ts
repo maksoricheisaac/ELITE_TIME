@@ -12,6 +12,7 @@ const STATUS_LABELS: Record<string, string> = {
   pending: 'En attente',
   approved: 'Approuvé',
   rejected: 'Refusé',
+  cancelled: 'Annulé',
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -36,8 +37,8 @@ export class GetLeaveRequestsTool implements AiTool {
           status: {
             type: 'string',
             description:
-              "Filtrer par statut : 'pending' (en attente), 'approved' (approuvé), 'rejected' (refusé).",
-            enum: ['pending', 'approved', 'rejected'],
+              "Filtrer par statut : 'pending' (en attente), 'approved' (approuvé), 'rejected' (refusé), 'cancelled' (annulé).",
+            enum: ['pending', 'approved', 'rejected', 'cancelled'],
           },
         },
       },
@@ -61,7 +62,12 @@ export class GetLeaveRequestsTool implements AiTool {
 
       if (context.role === 'employee') {
         whereBase.userId = context.userId;
-      } else if (context.role === 'team_lead' && context.department) {
+      } else if (
+        (context.role === 'team_lead' || context.role === 'manager') &&
+        context.department
+      ) {
+        // NOTE : logique de scoping dupliquée avec AbsencesService.getTeamAbsences().
+        // Si le mécanisme de scoping évolue (ex: passage à teamLeadId), mettre à jour ici aussi.
         const allUsers = await this.prisma.user.findMany({
           where: { status: 'active' },
           select: { id: true, department: true },

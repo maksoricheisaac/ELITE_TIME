@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { serverPatch, serverPost, serverDelete } from "@/lib/server-api";
 
 export async function approveAbsence(absenceId: string) {
@@ -18,7 +19,7 @@ function toDateStr(value: Date | string | undefined): string | undefined {
 
 export async function createManagedLeave(params: {
   userId: string;
-  type?: string;
+  type: string;
   startDate: Date | string;
   endDate: Date | string;
   reason: string;
@@ -46,4 +47,13 @@ export async function updateManagedLeave(params: {
 
 export async function deleteManagedLeave(absenceId: string) {
   await serverDelete(`/absences/managed/${absenceId}`);
+}
+
+/**
+ * Retire le congé de l'affichage (masquage) sans le supprimer physiquement
+ * ni changer son statut métier — la ligne reste récupérable en base.
+ */
+export async function hideManagedLeave(absenceId: string) {
+  await serverPatch(`/absences/managed/${absenceId}/hide`);
+  revalidatePath("/conges");
 }

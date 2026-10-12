@@ -28,12 +28,15 @@ function resolveItemsByPath(pathname: string): NavigationItem[] {
  *   • requiredPermissions absent → accessible à tout utilisateur authentifié
  *   • excludeWhenHasAny défini → masqué si l'utilisateur possède l'une d'elles
  *     (ex : "Mes pointages" masqué quand l'utilisateur a l'accès équipe)
+ *     SAUF pour l'admin : il garde l'accès à ses propres données personnelles
+ *     même s'il possède aussi les permissions de vue équipe/globale.
  */
 function canAccess(item: NavigationItem, permissionSet: Set<string>, userRole: UserRole): boolean {
   if (item.requiredRoles && !item.requiredRoles.includes(userRole)) return false;
 
   // Exclure si l'utilisateur possède l'une des permissions de remplacement
-  if (item.excludeWhenHasAny?.some((p) => permissionSet.has(p))) return false;
+  // (sauf admin : il garde l'accès à ses propres données personnelles).
+  if (userRole !== 'admin' && item.excludeWhenHasAny?.some((p) => permissionSet.has(p))) return false;
 
   const required = item.requiredPermissions ?? [];
   if (required.length === 0) return true;

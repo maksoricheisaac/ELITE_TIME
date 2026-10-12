@@ -165,7 +165,9 @@ export class WebsocketGateway
     if (!socket.userRole || !socket.userId) return;
     void socket.join(`user-${socket.userId}`);
     void socket.join(`${socket.userRole}-room`);
-    if (socket.userRole === 'manager') void socket.join('admin-room');
+    if (socket.userRole === 'manager' || socket.userRole === 'team_lead') {
+      void socket.join('admin-room');
+    }
     if (socket.userRole === 'admin') {
       void socket.join('manager-room');
       void socket.join('employee-room');
@@ -310,5 +312,27 @@ export class WebsocketGateway
   // Notifie un utilisateur spécifique que ses permissions ont changé
   broadcastPermissionsChanged(userId: string) {
     this.server?.to(`user-${userId}`).emit('permissions_changed', { userId });
+  }
+
+  // Notifie l'employé concerné que sa demande de congé a été traitée
+  broadcastLeaveStatusChanged(
+    userId: string,
+    payload: {
+      absenceId: string;
+      status: 'approved' | 'rejected' | 'cancelled';
+      comment?: string;
+    },
+  ) {
+    this.server?.to(`user-${userId}`).emit('leave_status_changed', payload);
+  }
+
+  // Notifie les managers/admins d'une nouvelle demande de congé à traiter
+  broadcastLeaveRequestCreated(payload: {
+    absenceId: string;
+    userId: string;
+    userName: string;
+    department: string | null;
+  }) {
+    this.server?.to('admin-room').emit('leave_request_created', payload);
   }
 }

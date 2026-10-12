@@ -9,7 +9,6 @@ import {
   CheckCircle,
   Shield,
   Mail,
-  ClipboardCheck,
   Building2,
   Briefcase,
 } from 'lucide-react';
@@ -71,8 +70,9 @@ export const navigationRegistry: NavigationGroup[] = [
         label: 'Mes pointages',
         // Toujours accessible à un employé, quelles que soient ses permissions
         // individuelles (ex : pointages.view_team accordé sans changer de rôle).
-        // Masqué uniquement pour les rôles manager/admin/team_lead, qui utilisent
-        // /pointages (vue équipe) à la place. Voir requiredRoles ci-dessous.
+        // Réservé au rôle "employee" : l'admin ne pointe pas ses propres horaires
+        // (il n'a donc pas de pointages personnels à consulter), et manager/
+        // team_lead utilisent /pointages (vue équipe) à la place.
         requiredRoles: ['employee'],
       },
       {
@@ -140,19 +140,24 @@ export const navigationRegistry: NavigationGroup[] = [
         hiddenFromSidebar: true,
       },
       {
+        id: 'mes-conges',
+        to: '/mes-conges',
+        icon: CheckCircle,
+        label: 'Mes congés',
+        // Demande/suivi de ses propres congés. Réservé aux utilisateurs n'ayant
+        // pas de vue équipe/globale sur les congés (sinon ils utilisent /conges),
+        // SAUF l'admin qui garde l'accès à ses propres congés même s'il possède
+        // aussi les permissions de vue équipe/globale (voir l'exception admin
+        // dans canAccess()/isVisible() qui neutralise excludeWhenHasAny pour lui).
+        requiredPermissions: ['absences.view_self'],
+        excludeWhenHasAny: ['absences.view_team', 'absences.view_all', 'absences.approve'],
+      },
+      {
         id: 'conges',
         to: '/conges',
         icon: CheckCircle,
         label: 'Congés',
-        requiredPermissions: ['absences.view_all']
-        // Ce sera accessible à tous bientôt
-      },
-      {
-        id: 'validations',
-        to: '/validations',
-        icon: ClipboardCheck,
-        label: 'Validations',
-        requiredPermissions: ['validations.view_team', 'validations.view_all'],
+        requiredPermissions: ['absences.view_all', 'absences.view_team', 'absences.approve'],
       },
     ],
   },
