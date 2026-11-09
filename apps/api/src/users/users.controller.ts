@@ -128,7 +128,11 @@ export class UsersController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(PermissionsGuard)
   @RequirePermissions('employees.create')
-  async create(@Body() body: Parameters<UsersService['create']>[0]) {
+  async create(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: Parameters<UsersService['create']>[0],
+  ) {
+    this.service.assertCanCreate(user, body);
     return this.service.create(body);
   }
 
@@ -157,9 +161,11 @@ export class UsersController {
   @UseGuards(PermissionsGuard)
   @RequirePermissions('employees.edit')
   async update(
+    @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
     @Body() body: Parameters<UsersService['update']>[1],
   ) {
+    await this.service.assertCanUpdate(user, id, body);
     return this.service.update(id, body);
   }
 
@@ -176,7 +182,11 @@ export class UsersController {
   @Delete(':id')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('employees.delete')
-  async delete(@Param('id') id: string) {
+  async delete(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    await this.service.assertCanDelete(user, id);
     return this.service.softDelete(id);
   }
 }

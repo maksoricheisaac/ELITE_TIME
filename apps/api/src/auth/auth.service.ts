@@ -32,7 +32,8 @@ export class AuthService {
     const recentFails = await this.prisma.activityLog.count({
       where: {
         action: 'LOGIN_ATTEMPT_FAILED',
-        details: { contains: key },
+        // `key` = "<identifiant> from <ip>" : même format que markLoginAttempt
+        details: { contains: key, mode: 'insensitive' },
         timestamp: { gte: windowStart },
         type: 'auth',
       },
@@ -130,7 +131,7 @@ export class AuthService {
     const sanitized = username.toLowerCase().trim();
 
     // Rate limit
-    const canAttempt = await this.checkRateLimit(`${ip}:${sanitized}`);
+    const canAttempt = await this.checkRateLimit(`${sanitized} from ${ip}`);
     if (!canAttempt) {
       await this.logSecurityEvent(
         'system',
@@ -183,7 +184,17 @@ export class AuthService {
       throw new UnauthorizedException('Identifiants invalides');
     }
 
-    if (user.role !== 'admin' && user.role !== 'manager') {
+    // Mode démo local UNIQUEMENT (ignoré en production) : permet de se connecter
+    // avec des comptes locaux employee/team_lead sans Active Directory.
+    const allowAllRolesLocally =
+      process.env.NODE_ENV !== 'production' &&
+      process.env.DEV_ALLOW_LOCAL_LOGIN_ALL_ROLES === 'true';
+
+    if (
+      !allowAllRolesLocally &&
+      user.role !== 'admin' &&
+      user.role !== 'manager'
+    ) {
       await this.logSecurityEvent(
         user.id,
         'LOGIN_DENIED_LOCAL_ROLE',
@@ -401,6 +412,14 @@ export class AuthService {
 
     const existingId = hiddenRecord?.userId;
     if (existingId) {
+      const current = await this.prisma.user.findUnique({
+        where: { id: existingId },
+        select: { status: true },
+      });
+      // Un compte désactivé ou supprimé ne se réactive PAS par une connexion AD.
+      if (current && current.status !== 'active') {
+        throw new ForbiddenException('Compte désactivé');
+      }
       return this.prisma.user.update({
         where: { id: existingId },
         data: {
@@ -409,7 +428,6 @@ export class AuthService {
           lastname: encryptedData.lastname,
           ...(data.department ? { department: encryptedData.department } : {}),
           ...(data.position ? { position: encryptedData.position } : {}),
-          status: 'active',
         },
       });
     }

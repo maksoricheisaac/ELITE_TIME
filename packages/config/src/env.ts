@@ -41,6 +41,7 @@ export const apiEnvSchema = z.object({
   OLLAMA_BASE_URL: optionalString,
   OLLAMA_MODEL: optionalString,
 
+  DEV_ALLOW_LOCAL_LOGIN_ALL_ROLES: boolString,
   REDIS_URL: optionalString,
   REDIS_KEY_PREFIX: optionalString,
   THROTTLE_LIMIT: z.coerce.number().int().positive().optional(),
@@ -83,10 +84,27 @@ export function parseEnv<T extends z.ZodType>(
   return result.data;
 }
 
+/** Règles inter-variables : certaines options de développement sont interdites en production. */
+function assertProductionSafety(env: ApiEnv) {
+  if (env.NODE_ENV === 'production' && env.DEV_ALLOW_LOCAL_LOGIN_ALL_ROLES === 'true') {
+    throw new EnvValidationError(
+      "Configuration d'environnement invalide :\n  - DEV_ALLOW_LOCAL_LOGIN_ALL_ROLES : interdit en production",
+    );
+  }
+}
+
 export const validateApiEnv = (
   source?: Record<string, string | undefined>,
-): ApiEnv => parseEnv(apiEnvSchema, source);
+): ApiEnv => {
+  const env = parseEnv(apiEnvSchema, source);
+  assertProductionSafety(env);
+  return env;
+};
 
 export const validateWorkerEnv = (
   source?: Record<string, string | undefined>,
-): WorkerEnv => parseEnv(workerEnvSchema, source);
+): WorkerEnv => {
+  const env = parseEnv(workerEnvSchema, source);
+  assertProductionSafety(env);
+  return env;
+};

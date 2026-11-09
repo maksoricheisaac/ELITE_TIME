@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './load-env';
 import { validateApiEnv } from '@elitetime/config';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';

@@ -27,7 +27,8 @@
     "fix:statuts": "node scripts/corriger-statuts-incomplets.js",
     "fix:statuts:apply": "node scripts/corriger-statuts-incomplets.js --fix",
     "rapport:email": "node scripts/envoyer-rapport-email.js",
-    "rapport:email:envoyer": "node scripts/envoyer-rapport-email.js --envoyer"
+    "rapport:email:envoyer": "node scripts/envoyer-rapport-email.js --envoyer",
+    "dev:demo": "cross-env ELITETIME_ENV_FILE=.env.demo nest start --watch"
   },
   "dependencies": {
     "@azure/identity": "^4.13.1",
@@ -75,6 +76,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
     "@types/supertest": "^7.0.0",
+    "cross-env": "^7.0.3",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",

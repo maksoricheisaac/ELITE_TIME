@@ -3,24 +3,129 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '@elitetime/database';
 import { encrypt } from '@elitetime/shared';
 import { encryptUser, decryptUser } from '@elitetime/shared';
-import type {
-  User,
-  UserRole,
-  UserStatus,
-  Prisma,
-} from '@elitetime/database';
+import type { User, UserRole, UserStatus, Prisma } from '@elitetime/database';
 import type { UserCreateInput } from '@elitetime/database/models';
 
 const SALT_ROUNDS = 10;
 
+const VALID_ROLES = ['employee', 'manager', 'admin', 'team_lead'] as const;
+const VALID_STATUSES = ['active', 'inactive', 'deleted'] as const;
+
+/** Rôles qu'un non-administrateur peut gérer (jamais admin ni manager). */
+const NON_ADMIN_MANAGEABLE_ROLES = new Set(['employee', 'team_lead']);
+
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Contrôle d'élévation de privilèges pour POST /users (côté serveur).
+   * Seul un administrateur peut créer un compte admin/manager ; un
+   * non-administrateur ne crée que des comptes `employee`.
+   */
+  assertCanCreate(
+    actor: { id: string; role: string },
+    data: { role?: string; status?: string },
+  ) {
+    if (data.role !== undefined && !VALID_ROLES.includes(data.role as never)) {
+      throw new BadRequestException('Rôle invalide');
+    }
+    if (
+      data.status !== undefined &&
+      !VALID_STATUSES.includes(data.status as never)
+    ) {
+      throw new BadRequestException('Statut invalide');
+    }
+    if (actor.role === 'admin') return;
+    if ((data.role ?? 'employee') !== 'employee') {
+      throw new ForbiddenException(
+        'Seul un administrateur peut attribuer ce rôle',
+      );
+    }
+  }
+
+  /**
+   * Contrôle d'élévation de privilèges pour PATCH /users/:id.
+   *  - nul ne modifie son propre rôle ni son propre statut ;
+   *  - seul un administrateur modifie un rôle, ou un compte admin/manager ;
+   *  - un non-administrateur ne peut qu'activer/désactiver un employé/team lead.
+   */
+  async assertCanUpdate(
+    actor: { id: string; role: string },
+    targetId: string,
+    data: { role?: string; status?: string },
+  ) {
+    if (data.role !== undefined && !VALID_ROLES.includes(data.role as never)) {
+      throw new BadRequestException('Rôle invalide');
+    }
+    if (
+      data.status !== undefined &&
+      !VALID_STATUSES.includes(data.status as never)
+    ) {
+      throw new BadRequestException('Statut invalide');
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: { id: true, role: true },
+    });
+    if (!target) throw new NotFoundException('Utilisateur introuvable');
+
+    const touchesRoleOrStatus =
+      data.role !== undefined || data.status !== undefined;
+
+    if (actor.id === targetId && touchesRoleOrStatus) {
+      throw new ForbiddenException(
+        'Vous ne pouvez pas modifier votre propre rôle ou statut',
+      );
+    }
+    if (actor.role === 'admin') return;
+
+    if (!NON_ADMIN_MANAGEABLE_ROLES.has(target.role)) {
+      throw new ForbiddenException(
+        'Seul un administrateur peut modifier ce compte',
+      );
+    }
+    if (data.role !== undefined) {
+      throw new ForbiddenException(
+        'Seul un administrateur peut modifier un rôle',
+      );
+    }
+    if (
+      data.status !== undefined &&
+      data.status !== 'active' &&
+      data.status !== 'inactive'
+    ) {
+      throw new ForbiddenException(
+        'Seul un administrateur peut appliquer ce statut',
+      );
+    }
+  }
+
+  /** Nul ne se supprime lui-même ; seul un admin supprime un compte admin/manager. */
+  async assertCanDelete(actor: { id: string; role: string }, targetId: string) {
+    if (actor.id === targetId) {
+      throw new ForbiddenException(
+        'Vous ne pouvez pas supprimer votre propre compte',
+      );
+    }
+    if (actor.role === 'admin') return;
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: { role: true },
+    });
+    if (target && !NON_ADMIN_MANAGEABLE_ROLES.has(target.role)) {
+      throw new ForbiddenException(
+        'Seul un administrateur peut supprimer ce compte',
+      );
+    }
+  }
 
   private sanitize(u: User) {
     const { password: _pw, ...safe } = decryptUser(u);
