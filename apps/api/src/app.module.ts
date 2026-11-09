@@ -65,7 +65,10 @@ import { AiModule } from './ai/ai.module';
     WebsocketModule,
     LdapModule,
     EmailModule,
-    SchedulerModule,
+    // Tâches planifiées dans le processus API (historique). Mettre
+    // RUN_SCHEDULERS=false quand le service worker (apps/worker) est déployé,
+    // sinon elles s'exécuteraient deux fois.
+    ...(process.env.RUN_SCHEDULERS !== 'false' ? [SchedulerModule] : []),
     PointagesModule,
     BreaksModule,
     AbsencesModule,

@@ -47,6 +47,18 @@ export const apiEnvSchema = z.object({
   THROTTLE_LOGIN_LIMIT: z.coerce.number().int().positive().optional(),
 });
 
+/**
+ * Variables du worker : même base de données et même clé de chiffrement que
+ * l'API (données chiffrées partagées) ; Redis est OBLIGATOIRE (BullMQ).
+ */
+export const workerEnvSchema = apiEnvSchema.extend({
+  REDIS_URL: z.string().min(1, 'obligatoire (files BullMQ)'),
+  WORKER_HEALTH_PORT: z.coerce.number().int().min(1).max(65535).default(4100),
+  WORKER_HEALTH_HOST: z.string().default('0.0.0.0'),
+});
+
+export type WorkerEnv = z.infer<typeof workerEnvSchema>;
+
 export type ApiEnv = z.infer<typeof apiEnvSchema>;
 
 export class EnvValidationError extends Error {}
@@ -74,3 +86,7 @@ export function parseEnv<T extends z.ZodType>(
 export const validateApiEnv = (
   source?: Record<string, string | undefined>,
 ): ApiEnv => parseEnv(apiEnvSchema, source);
+
+export const validateWorkerEnv = (
+  source?: Record<string, string | undefined>,
+): WorkerEnv => parseEnv(workerEnvSchema, source);
