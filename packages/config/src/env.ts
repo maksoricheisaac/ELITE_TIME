@@ -42,6 +42,9 @@ export const apiEnvSchema = z.object({
   OLLAMA_MODEL: optionalString,
 
   REDIS_URL: optionalString,
+  REDIS_KEY_PREFIX: optionalString,
+  THROTTLE_LIMIT: z.coerce.number().int().positive().optional(),
+  THROTTLE_LOGIN_LIMIT: z.coerce.number().int().positive().optional(),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

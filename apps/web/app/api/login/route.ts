@@ -11,7 +11,13 @@ export async function POST(req: Request) {
 
     const nestRes = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // Relaye l'IP réelle du client (journal d'activité, rate limiting)
+        ...(req.headers.get("x-forwarded-for")
+          ? { "X-Forwarded-For": req.headers.get("x-forwarded-for") as string }
+          : {}),
+      },
       body: JSON.stringify(body),
     });
 

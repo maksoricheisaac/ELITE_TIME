@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@elitetime/database';
+import { CacheService } from '../redis/cache.service';
+
+const SETTINGS_CACHE_KEY = 'settings:system';
+const SETTINGS_CACHE_TTL_S = 60;
 
 const DEFAULTS = {
   workStartTime: '08:45',
@@ -20,28 +24,38 @@ const DEFAULTS = {
 
 @Injectable()
 export class SettingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
+  ) {}
 
   async get() {
-    let s = await this.prisma.systemSettings.findFirst();
-    if (!s) {
-      s = await this.prisma.systemSettings.create({
-        data: { ...DEFAULTS, id: 1 },
-      });
-    }
-    return s;
+    return this.cache.getOrSet(
+      SETTINGS_CACHE_KEY,
+      SETTINGS_CACHE_TTL_S,
+      async () => {
+        let s = await this.prisma.systemSettings.findFirst();
+        if (!s) {
+          s = await this.prisma.systemSettings.create({
+            data: { ...DEFAULTS, id: 1 },
+          });
+        }
+        return s;
+      },
+    );
   }
 
   async update(data: Partial<typeof DEFAULTS>) {
     const existing = await this.prisma.systemSettings.findFirst();
-    if (!existing) {
-      return this.prisma.systemSettings.create({
-        data: { ...DEFAULTS, ...data, id: 1 },
-      });
-    }
-    return this.prisma.systemSettings.update({
-      where: { id: 1 },
-      data: data,
-    });
+    const result = !existing
+      ? await this.prisma.systemSettings.create({
+          data: { ...DEFAULTS, ...data, id: 1 },
+        })
+      : await this.prisma.systemSettings.update({
+          where: { id: 1 },
+          data: data,
+        });
+    await this.cache.invalidate(SETTINGS_CACHE_KEY);
+    return result;
   }
 }

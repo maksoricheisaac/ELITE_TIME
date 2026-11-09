@@ -5,12 +5,19 @@ import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { RedisService } from './redis/redis.service';
+import { RedisIoAdapter } from './redis/redis-io.adapter';
 
 async function bootstrap() {
   // Fail-fast : configuration invalide => arrêt avec la liste des variables en défaut (sans valeurs)
   validateApiEnv();
 
   const app = await NestFactory.create(AppModule);
+
+  // Socket.IO : adaptateur Redis (multi-instances) si Redis disponible
+  const ioAdapter = new RedisIoAdapter(app, app.get(RedisService));
+  await ioAdapter.connect();
+  app.useWebSocketAdapter(ioAdapter);
 
   // Cookie parsing (session auth)
   app.use(cookieParser());

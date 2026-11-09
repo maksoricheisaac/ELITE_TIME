@@ -1,4 +1,11 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { RedisModule } from './redis/redis.module';
+import { RedisService } from './redis/redis.service';
+import { RedisThrottlerStorage } from './redis/throttler-redis.storage';
+import { AppThrottlerGuard, isLoginRequest } from './redis/app-throttler.guard';
+import { HealthModule } from './health/health.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -28,6 +35,31 @@ import { AiModule } from './ai/ai.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
+    RedisModule,
+    ThrottlerModule.forRootAsync({
+      inject: [RedisService],
+      useFactory: (redis: RedisService) => ({
+        // Compteurs partagés via Redis (repli mémoire locale si indisponible)
+        storage: new RedisThrottlerStorage(redis),
+        throttlers: [
+          {
+            name: 'default',
+            ttl: 60_000,
+            limit: Number(process.env.THROTTLE_LIMIT ?? 600),
+            skipIf: (ctx) => isLoginRequest(ctx.switchToHttp().getRequest()),
+          },
+          {
+            // Anti brute-force : tentatives de connexion par IP + identifiant
+            name: 'login',
+            ttl: 5 * 60_000,
+            limit: Number(process.env.THROTTLE_LOGIN_LIMIT ?? 10),
+            blockDuration: 5 * 60_000,
+            skipIf: (ctx) => !isLoginRequest(ctx.switchToHttp().getRequest()),
+          },
+        ],
+      }),
+    }),
+    HealthModule,
     PrismaModule,
     AuthModule,
     WebsocketModule,
@@ -51,6 +83,6 @@ import { AiModule } from './ai/ai.module';
     AiModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: AppThrottlerGuard }],
 })
 export class AppModule {}
