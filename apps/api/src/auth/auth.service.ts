@@ -10,9 +10,9 @@ import {
 import { Client } from 'ldapts';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@elitetime/database';
 import { encryptUser, decryptUser } from '../lib/prisma-crypto.helper';
-import type { User } from '../generated/prisma/client';
+import type { User } from '@elitetime/database';
 import type { AuthenticatedUser } from './interfaces/authenticated-request.interface';
 
 const SESSION_MAX_AGE_SECONDS = 86400; // 24h

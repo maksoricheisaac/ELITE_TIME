@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import type { ActivityType } from '../generated/prisma/client';
+import { PrismaService } from '@elitetime/database';
+import type { ActivityType } from '@elitetime/database';
 import { decrypt } from '../lib/crypto';
 import {
   encryptPointage,

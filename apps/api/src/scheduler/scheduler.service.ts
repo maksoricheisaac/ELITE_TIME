@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Cron, Interval } from '@nestjs/schedule';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@elitetime/database';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { LdapSyncService } from '../ldap/ldap-sync.service';
 import {

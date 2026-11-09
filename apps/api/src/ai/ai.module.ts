@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from '../prisma/prisma.module.js';
+import { PrismaModule } from '@elitetime/database';
 import { AuthModule } from '../auth/auth.module.js';
 import { AiController } from './ai.controller.js';
 import { AiService } from './ai.service.js';

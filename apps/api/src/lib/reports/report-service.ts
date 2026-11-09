@@ -1,5 +1,5 @@
 import { ReportCalculator, ReportThresholds } from './report-calculator';
-import type { User, Pointage, Break } from '../../generated/prisma/client';
+import type { User, Pointage, Break } from '@elitetime/database';
 
 export interface GroupedDayData {
   date: Date;

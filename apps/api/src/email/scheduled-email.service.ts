@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@elitetime/database';
 import { sendEmail } from '../lib/email';
 import {
   decryptUser,
@@ -13,7 +13,7 @@ import { renderNewPointagesReportHtml } from '../lib/reports/new-pointages-repor
 import { generateNewExcelReport } from '../lib/reports/new-excel-generator';
 import { renderPdfFromHtml } from '../lib/reports/html-to-pdf';
 import { buildEmailBodyHtml } from '../lib/reports/email-body-template';
-import type { DailyReportMode } from 'src/generated/prisma/client';
+import type { DailyReportMode } from '@elitetime/database';
 
 // ── Helpers timezone ────────────────────────────────────────────────────────
 

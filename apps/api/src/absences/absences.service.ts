@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@elitetime/database';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import {
   encryptAbsence,
@@ -12,7 +12,7 @@ import {
   decryptUser,
 } from '../lib/prisma-crypto.helper';
 import { decrypt } from '../lib/crypto';
-import type { AbsenceType } from '../generated/prisma/client';
+import type { AbsenceType } from '@elitetime/database';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-request.interface';
 
 type DecisionAuthor = {

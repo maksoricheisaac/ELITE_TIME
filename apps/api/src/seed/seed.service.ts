@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@elitetime/database';
 import { encrypt } from '../lib/crypto';
-import type { PermissionRisk } from '../generated/prisma/enums';
+import type { PermissionRisk } from '@elitetime/database/enums';
 
 type RawPermDef = {
   name: string;

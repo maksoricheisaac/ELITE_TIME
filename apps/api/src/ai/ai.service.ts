@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { PrismaService } from '../prisma/prisma.service.js';
+import { PrismaService } from '@elitetime/database';
 import { ToolOrchestratorService } from './orchestrator/tool-orchestrator.service.js';
 import { AiMetricsService } from './metrics/ai-metrics.service.js';
 import { AiRequestQueue } from './queue/ai-request.queue.js';

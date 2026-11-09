@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ToolOrchestratorService } from '../orchestrator/tool-orchestrator.service.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { PrismaService } from '@elitetime/database';
 import { OllamaService } from '../ollama.service.js';
 import { ToolResultCache } from '../cache/tool-result.cache.js';
 import { GetMyHoursTool } from '../tools/get-my-hours.tool.js';

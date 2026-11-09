@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@elitetime/database';
 import { decryptActivityLog, decryptUser } from '../lib/prisma-crypto.helper';
-import type { Prisma, ActivityType } from '../generated/prisma/client';
+import type { Prisma, ActivityType } from '@elitetime/database';
 
 @Injectable()
 export class LogsService {

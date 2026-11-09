@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { AiService } from '../ai.service.js';
 import { ToolOrchestratorService } from '../orchestrator/tool-orchestrator.service.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { PrismaService } from '@elitetime/database';
 import { AiMetricsService } from '../metrics/ai-metrics.service.js';
 import { AiRequestQueue } from '../queue/ai-request.queue.js';
 

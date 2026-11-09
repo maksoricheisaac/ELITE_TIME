@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from '../decorators/require-permissions.decorator';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '@elitetime/database';
 import type { AuthenticatedUser } from '../interfaces/authenticated-request.interface';
 
 /**

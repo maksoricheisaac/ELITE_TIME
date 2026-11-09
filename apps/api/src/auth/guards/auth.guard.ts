@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '@elitetime/database';
 import { decryptUser } from '../../lib/prisma-crypto.helper';
 import type { AuthenticatedUser } from '../interfaces/authenticated-request.interface';
 

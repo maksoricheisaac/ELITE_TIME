@@ -8,7 +8,7 @@ import {
   ScheduledEmailJobRecipient,
   Session,
   User,
-} from 'src/generated/prisma/client';
+} from '@elitetime/database';
 import { encrypt, decrypt } from './crypto';
 import type {
   UserCreateInput,
@@ -20,7 +20,7 @@ import type {
   SessionCreateInput,
   HiddenUsernameCreateInput,
   ScheduledEmailJobRecipientCreateInput,
-} from 'src/generated/prisma/models';
+} from '@elitetime/database/models';
 
 export function encryptUser(
   data: Partial<UserCreateInput>,

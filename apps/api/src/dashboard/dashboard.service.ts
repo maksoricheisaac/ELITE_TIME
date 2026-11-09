@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@elitetime/database';
 import { decryptUser } from '../lib/prisma-crypto.helper';
 import { decrypt } from '../lib/crypto';
 

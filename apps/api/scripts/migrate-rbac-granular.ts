@@ -28,7 +28,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 
 // Prisma 7.x utilise un driver adapter — même pattern que PrismaService
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { PrismaClient } = require('../dist/src/generated/prisma/client');
+const { PrismaClient } = require('@elitetime/database');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { PrismaPg } = require('@prisma/adapter-pg');
 

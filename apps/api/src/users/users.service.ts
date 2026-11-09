@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@elitetime/database';
 import { encrypt } from '../lib/crypto';
 import { encryptUser, decryptUser } from '../lib/prisma-crypto.helper';
 import type {
@@ -13,8 +13,8 @@ import type {
   UserRole,
   UserStatus,
   Prisma,
-} from '../generated/prisma/client';
-import type { UserCreateInput } from '../generated/prisma/models';
+} from '@elitetime/database';
+import type { UserCreateInput } from '@elitetime/database/models';
 
 const SALT_ROUNDS = 10;
 
