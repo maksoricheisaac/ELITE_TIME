@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '@elitetime/database';
-import { encrypt } from '../lib/crypto';
-import { encryptUser, decryptUser } from '../lib/prisma-crypto.helper';
+import { encrypt } from '@elitetime/shared';
+import { encryptUser, decryptUser } from '@elitetime/shared';
 import type {
   User,
   UserRole,

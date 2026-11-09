@@ -1,0 +1,29 @@
+{
+  "name": "@elitetime/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Validation Zod centralisée des variables d'environnement",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "jest"
+  },
+  "dependencies": { "zod": "^4.1.12" },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.0.0",
+    "jest": "^30.0.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.3"
+  },
+  "jest": {
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": { "^.+\\.ts$": "ts-jest" },
+    "moduleFileExtensions": ["js", "json", "ts"],
+    "testEnvironment": "node"
+  }
+}

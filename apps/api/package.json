@@ -31,7 +31,9 @@
   },
   "dependencies": {
     "@azure/identity": "^4.13.1",
+    "@elitetime/config": "workspace:*",
     "@elitetime/database": "workspace:*",
+    "@elitetime/shared": "workspace:*",
     "@hono/node-server": "^2.0.4",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@nestjs/common": "^11.0.1",

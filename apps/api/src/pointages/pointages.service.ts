@@ -1,12 +1,12 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@elitetime/database';
 import type { ActivityType } from '@elitetime/database';
-import { decrypt } from '../lib/crypto';
+import { decrypt } from '@elitetime/shared';
 import {
   encryptPointage,
   decryptPointage,
   decryptUser,
-} from '../lib/prisma-crypto.helper';
+} from '@elitetime/shared';
 import { formatMinutesHuman } from '../lib/time-format';
 
 const DEFAULT_WORK_START_TIME = '08:45';

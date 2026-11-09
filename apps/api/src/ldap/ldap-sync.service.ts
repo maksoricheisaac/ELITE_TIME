@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Client } from 'ldapts';
 import { PrismaService } from '@elitetime/database';
-import { encrypt, decrypt } from '../lib/crypto';
-import { encryptUser } from '../lib/prisma-crypto.helper';
+import { encrypt, decrypt } from '@elitetime/shared';
+import { encryptUser } from '@elitetime/shared';
 
 export interface LdapSyncResult {
   syncedCount: number;

@@ -6,7 +6,7 @@ import {
   decryptPointage,
   decryptBreak,
   decryptScheduledEmailJobRecipient,
-} from '../lib/prisma-crypto.helper';
+} from '@elitetime/shared';
 import { groupPointagesByDay } from '../lib/reports/report-service';
 import { ReportCalculator } from '../lib/reports/report-calculator';
 import { renderNewPointagesReportHtml } from '../lib/reports/new-pointages-report-template';

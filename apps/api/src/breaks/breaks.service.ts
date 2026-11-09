@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@elitetime/database';
-import { encrypt, decrypt } from '../lib/crypto';
-import { decryptBreak } from '../lib/prisma-crypto.helper';
+import { encrypt, decrypt } from '@elitetime/shared';
+import { decryptBreak } from '@elitetime/shared';
 
 @Injectable()
 export class BreaksService {

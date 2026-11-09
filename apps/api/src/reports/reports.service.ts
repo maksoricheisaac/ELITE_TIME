@@ -8,7 +8,7 @@ import {
   decryptUser,
   decryptPointage,
   decryptBreak,
-} from '../lib/prisma-crypto.helper';
+} from '@elitetime/shared';
 import { groupPointagesByDay } from '../lib/reports/report-service';
 import { renderNewPointagesReportHtml } from '../lib/reports/new-pointages-report-template';
 import { generateNewExcelReport } from '../lib/reports/new-excel-generator';

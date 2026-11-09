@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@elitetime/database';
-import { encrypt, decrypt } from '../lib/crypto';
-import { decryptUser } from '../lib/prisma-crypto.helper';
+import { encrypt, decrypt } from '@elitetime/shared';
+import { decryptUser } from '@elitetime/shared';
 
 @Injectable()
 export class EmailSchedulingService {

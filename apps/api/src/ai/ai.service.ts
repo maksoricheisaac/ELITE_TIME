@@ -9,7 +9,7 @@ import { PrismaService } from '@elitetime/database';
 import { ToolOrchestratorService } from './orchestrator/tool-orchestrator.service.js';
 import { AiMetricsService } from './metrics/ai-metrics.service.js';
 import { AiRequestQueue } from './queue/ai-request.queue.js';
-import { encryptActivityLog } from '../lib/prisma-crypto.helper.js';
+import { encryptActivityLog } from '@elitetime/shared';
 import { validateAiRole } from './security/ai-rbac.js';
 import {
   sanitizeAiInput,

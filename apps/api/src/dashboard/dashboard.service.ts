@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@elitetime/database';
-import { decryptUser } from '../lib/prisma-crypto.helper';
-import { decrypt } from '../lib/crypto';
+import { decryptUser } from '@elitetime/shared';
+import { decrypt } from '@elitetime/shared';
 
 // Extrait "YYYY-MM-DD" depuis les getters locaux du process Node.js.
 // Contrairement à .toISOString() qui retourne toujours UTC, cette fonction

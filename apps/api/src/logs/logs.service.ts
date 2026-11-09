@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@elitetime/database';
-import { decryptActivityLog, decryptUser } from '../lib/prisma-crypto.helper';
+import { decryptActivityLog, decryptUser } from '@elitetime/shared';
 import type { Prisma, ActivityType } from '@elitetime/database';
 
 @Injectable()

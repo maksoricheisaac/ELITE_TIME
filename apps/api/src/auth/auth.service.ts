@@ -11,7 +11,7 @@ import { Client } from 'ldapts';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '@elitetime/database';
-import { encryptUser, decryptUser } from '../lib/prisma-crypto.helper';
+import { encryptUser, decryptUser } from '@elitetime/shared';
 import type { User } from '@elitetime/database';
 import type { AuthenticatedUser } from './interfaces/authenticated-request.interface';
 

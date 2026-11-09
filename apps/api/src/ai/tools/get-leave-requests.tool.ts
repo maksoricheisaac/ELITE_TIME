@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@elitetime/database';
-import { decryptUser } from '../../lib/prisma-crypto.helper.js';
-import { decrypt } from '../../lib/crypto.js';
+import { decryptUser } from '@elitetime/shared';
+import { decrypt } from '@elitetime/shared';
 import type { AiTool, AiToolResult } from './ai-tool.interface.js';
 import type { Prisma } from '@elitetime/database';
 import type { ToolContext } from '../interfaces/tool-context.interface.js';

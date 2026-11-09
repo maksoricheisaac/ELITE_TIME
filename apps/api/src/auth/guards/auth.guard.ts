@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { PrismaService } from '@elitetime/database';
-import { decryptUser } from '../../lib/prisma-crypto.helper';
+import { decryptUser } from '@elitetime/shared';
 import type { AuthenticatedUser } from '../interfaces/authenticated-request.interface';
 
 export const SESSION_COOKIE_NAME = 'elitetime_session';

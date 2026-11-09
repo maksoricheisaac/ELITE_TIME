@@ -10,8 +10,8 @@ import {
   encryptAbsence,
   decryptAbsence,
   decryptUser,
-} from '../lib/prisma-crypto.helper';
-import { decrypt } from '../lib/crypto';
+} from '@elitetime/shared';
+import { decrypt } from '@elitetime/shared';
 import type { AbsenceType } from '@elitetime/database';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-request.interface';
 

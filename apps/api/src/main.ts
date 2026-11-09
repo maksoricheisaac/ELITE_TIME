@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { validateApiEnv } from '@elitetime/config';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
@@ -6,6 +7,9 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  // Fail-fast : configuration invalide => arrêt avec la liste des variables en défaut (sans valeurs)
+  validateApiEnv();
+
   const app = await NestFactory.create(AppModule);
 
   // Cookie parsing (session auth)
