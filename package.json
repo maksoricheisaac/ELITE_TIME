@@ -1,0 +1,14 @@
+{
+  "name": "elitetime",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@12.14.0",
+  "engines": { "node": ">=22", "pnpm": ">=10" },
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter web --filter api dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test"
+  }
+}

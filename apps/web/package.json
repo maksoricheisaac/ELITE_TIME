@@ -1,5 +1,5 @@
 {
-  "name": "elitetime",
+  "name": "web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,10 +7,8 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3000",
-    "lint": "eslint"
-  },
-  "overrides": {
-    "postcss": "^8.5.10"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
