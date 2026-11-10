@@ -19,7 +19,7 @@ x-dev-image: &dev-image
 
 x-dev-env: &dev-env
   NODE_ENV: development
-  TZ: Europe/Paris
+  TZ: Africa/Brazzaville
   DATABASE_URL: postgresql://elitetime:elitetime_dev@postgres:5432/elitetime_dev
   REDIS_URL: redis://redis:6379
   REDIS_KEY_PREFIX: "dev:"
@@ -130,7 +130,7 @@ services:
     command: ["pnpm", "exec", "next", "dev", "-p", "3000", "-H", "0.0.0.0"]
     environment:
       NODE_ENV: development
-      TZ: Europe/Paris
+      TZ: Africa/Brazzaville
       API_URL: http://api:4000/api
       NEXT_PUBLIC_API_URL: http://localhost:${API_DEV_PORT:-4010}/api
       NEXT_PUBLIC_SOCKET_URL: http://localhost:${API_DEV_PORT:-4010}

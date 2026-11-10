@@ -80,11 +80,11 @@ export default async function AppReportsPage(props: {
       const overtimeThreshold = settings?.overtimeThreshold ?? 40;
 
       if (sortedEmployees.length === 0) {
-        result = <ManagerReportsClient team={[]} pointages={[]} breaks={[]} absences={[]} overtimeThreshold={overtimeThreshold} canExportPdf={canExportPdf} canExportExcel={canExportExcel} />;
+        result = <ManagerReportsClient team={[]} pointages={[]} breaks={[]} absences={[]} overtimeThreshold={overtimeThreshold} holidays={(settings as unknown as { holidays?: unknown } | null)?.holidays} canExportPdf={canExportPdf} canExportExcel={canExportExcel} />;
       } else {
         const { fromDate, toDate } = resolveRange(searchParams);
         const { pointages, breaks, absences } = await fetchTeamReportData(sortedEmployees, toDateStr(fromDate), toDateStr(toDate));
-        result = <ManagerReportsClient team={sortedEmployees} pointages={pointages} breaks={breaks} absences={absences} overtimeThreshold={overtimeThreshold} canExportPdf={canExportPdf} canExportExcel={canExportExcel} />;
+        result = <ManagerReportsClient team={sortedEmployees} pointages={pointages} breaks={breaks} absences={absences} overtimeThreshold={overtimeThreshold} holidays={(settings as unknown as { holidays?: unknown } | null)?.holidays} canExportPdf={canExportPdf} canExportExcel={canExportExcel} />;
       }
     } else if (permSet.has('reports.view_team')) {
       // Accès équipe : via server actions dédiées (filtre département)
@@ -111,11 +111,11 @@ export default async function AppReportsPage(props: {
       const overtimeThreshold = settings?.overtimeThreshold ?? 40;
 
       if (sortedEmployees.length === 0) {
-        result = <ManagerReportsClient team={[]} pointages={[]} breaks={[]} absences={[]} overtimeThreshold={overtimeThreshold} canExportPdf={canExportPdf} canExportExcel={canExportExcel} />;
+        result = <ManagerReportsClient team={[]} pointages={[]} breaks={[]} absences={[]} overtimeThreshold={overtimeThreshold} holidays={(settings as unknown as { holidays?: unknown } | null)?.holidays} canExportPdf={canExportPdf} canExportExcel={canExportExcel} />;
       } else {
         const { fromDate, toDate } = resolveRange(searchParams);
         const { pointages, breaks, absences } = await fetchTeamReportData(sortedEmployees, toDateStr(fromDate), toDateStr(toDate));
-        result = <ManagerReportsClient team={sortedEmployees} pointages={pointages} breaks={breaks} absences={absences} overtimeThreshold={overtimeThreshold} canExportPdf={canExportPdf} canExportExcel={canExportExcel} />;
+        result = <ManagerReportsClient team={sortedEmployees} pointages={pointages} breaks={breaks} absences={absences} overtimeThreshold={overtimeThreshold} holidays={(settings as unknown as { holidays?: unknown } | null)?.holidays} canExportPdf={canExportPdf} canExportExcel={canExportExcel} />;
       }
     } else {
       redirect('/403');

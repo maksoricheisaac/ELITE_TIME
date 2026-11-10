@@ -2,20 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@elitetime/database';
 import { decryptUser, decryptActivityLog } from '@elitetime/shared';
 import { decrypt } from '@elitetime/shared';
-
-// Extrait "YYYY-MM-DD" depuis les getters locaux du process Node.js.
-// Contrairement à .toISOString() qui retourne toujours UTC, cette fonction
-// respecte le fuseau horaire système — indispensable pour rattacher les
-// pointages du soir au bon jour calendaire (ex. 23h30 CEST = 21h30 UTC = J en
-// local, mais J-1 via toISOString).
-function toLocalDateKey(d: Date | string): string {
-  const date = d instanceof Date ? d : new Date(d);
-  return (
-    `${date.getFullYear()}-` +
-    `${String(date.getMonth() + 1).padStart(2, '0')}-` +
-    `${String(date.getDate()).padStart(2, '0')}`
-  );
-}
+import { dayEnd, dayKeyOf, dayStart, isWorkingDay } from '@elitetime/time';
+import { WorkTimeService } from '../work-time/work-time.service';
 
 // Déchiffre le département d'un utilisateur brut (champ encrypted) et retourne
 // le nom en clair, ou null si absent/impossible à déchiffrer.
@@ -30,7 +18,24 @@ function decryptDept(encryptedDept: string | null | undefined): string | null {
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workTime: WorkTimeService,
+  ) {}
+
+  /** Jour calendaire (fuseau métier) d'un instant — jamais le jour UTC ni celui du serveur. */
+  private toLocalDateKey(d: Date | string): string {
+    return dayKeyOf(d instanceof Date ? d : new Date(d), this.workTime.tz);
+  }
+
+  /** Bornes [début du jour de `from`, fin du jour de `to`] dans le fuseau métier. */
+  private rangeBounds(from: Date | string, to: Date | string) {
+    const tz = this.workTime.tz;
+    return {
+      gte: dayStart(dayKeyOf(new Date(from), tz), tz),
+      lte: dayEnd(dayKeyOf(new Date(to), tz), tz),
+    };
+  }
 
   // ── Admin stats — shape attendue par AdminDashboardStats ──────────────────
 
@@ -87,7 +92,7 @@ export class DashboardService {
     });
     const pointages = await this.prisma.pointage.findMany({
       where: {
-        date: { gte: new Date(from), lte: new Date(to) },
+        date: this.rangeBounds(from, to),
         // On exclut les utilisateurs supprimés au niveau du graphe admin via
         // la jointure implicite — on garde tous les pointages existants.
       },
@@ -98,7 +103,7 @@ export class DashboardService {
     for (const p of pointages) {
       // Utilise les getters locaux — pas toISOString() qui est UTC et peut
       // décaler le jour d'un calendaire sur les pointages tardifs (>22h CEST).
-      const key = toLocalDateKey(p.date);
+      const key = this.toLocalDateKey(p.date);
       if (!byDay[key]) byDay[key] = { userIds: new Set(), late: 0 };
       byDay[key].userIds.add(p.userId);
       if (p.status === 'late') byDay[key].late++;
@@ -208,14 +213,14 @@ export class DashboardService {
     const pointages = await this.prisma.pointage.findMany({
       where: {
         userId: { in: team.map((u) => u.id) },
-        date: { gte: new Date(from), lte: new Date(to) },
+        date: this.rangeBounds(from, to),
       },
       select: { date: true, status: true, userId: true },
     });
 
     const byDay: Record<string, { userIds: Set<string>; late: number }> = {};
     for (const p of pointages) {
-      const key = toLocalDateKey(p.date);
+      const key = this.toLocalDateKey(p.date);
       if (!byDay[key]) byDay[key] = { userIds: new Set(), late: 0 };
       byDay[key].userIds.add(p.userId);
       if (p.status === 'late') byDay[key].late++;
@@ -316,15 +321,18 @@ export class DashboardService {
         .map((l) => l.userId)
         .filter((id) => workforce.has(id) && !present.has(id)),
     );
-    const dow = new Date().getDay();
-    const isWorkingDay = dow !== 0 && dow !== 6;
+    const { holidays } = await this.workTime.getSettings();
+    const workingToday = isWorkingDay(
+      dayKeyOf(new Date(), this.workTime.tz),
+      holidays,
+    );
 
     return {
-      isWorkingDay,
+      isWorkingDay: workingToday,
       workforce: workforce.size,
       presentToday: present.size,
       onLeaveToday: onLeave.size,
-      absentToday: isWorkingDay
+      absentToday: workingToday
         ? Math.max(0, workforce.size - present.size - onLeave.size)
         : null,
       lateToday: late.size,
@@ -352,13 +360,11 @@ export class DashboardService {
   }
 
   private todayStart() {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
+    const tz = this.workTime.tz;
+    return dayStart(dayKeyOf(new Date(), tz), tz);
   }
   private todayEnd() {
-    const d = new Date();
-    d.setHours(23, 59, 59, 999);
-    return d;
+    const tz = this.workTime.tz;
+    return dayEnd(dayKeyOf(new Date(), tz), tz);
   }
 }

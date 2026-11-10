@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@elitetime/database';
+import { dayEnd, dayKeyOf, dayStart, isValidDayKey } from '@elitetime/time';
+import { businessTimeZone } from '../../work-time/work-time.service';
 import { decryptUser } from '@elitetime/shared';
 import { decrypt } from '@elitetime/shared';
 import type { AiTool, AiToolResult } from './ai-tool.interface.js';
@@ -49,14 +51,14 @@ export class GetLateEmployeesTool implements AiTool {
     }
 
     try {
+      const tz = businessTimeZone();
       const dateStr =
-        (validation.sanitized.date as string) ||
-        new Date().toISOString().slice(0, 10);
-      const date = new Date(dateStr);
-      const start = new Date(date);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(date);
-      end.setHours(23, 59, 59, 999);
+        (validation.sanitized.date as string) || dayKeyOf(new Date(), tz);
+      if (!isValidDayKey(dateStr)) {
+        return { success: false, error: 'Date invalide (AAAA-MM-JJ attendu).' };
+      }
+      const start = dayStart(dateStr, tz);
+      const end = dayEnd(dateStr, tz);
 
       const latePointages = await this.prisma.pointage.findMany({
         where: { status: 'late', date: { gte: start, lte: end } },

@@ -1,3 +1,5 @@
+import { dayKeyOf, isWorkingDay, parseHM } from '@elitetime/time';
+import type { BreakDeductionMode, DayKey } from '@elitetime/time';
 import { formatMinutesHuman } from '../time-format';
 
 export interface TimeComputation {
@@ -21,14 +23,19 @@ export const REPORT_CONFIG = {
 export interface ReportThresholds {
   lateThreshold: string; // ex. '08:45'
   overtimeThreshold: string; // ex. '17:30'
+  /** Jours fériés (clés AAAA-MM-JJ) — un jour férié n'est pas un jour ouvré (pas de retard). */
+  holidays?: ReadonlySet<DayKey>;
+  /** Règle de déduction des pauses (défaut : pauses enregistrées uniquement). */
+  breakMode?: BreakDeductionMode;
+  flatBreakMinutes?: number;
+  /** Fuseau métier (défaut Africa/Brazzaville). */
+  tz?: string;
 }
 
 export class ReportCalculator {
+  /** « HH:mm » → minutes depuis minuit ; `null` si absent ou invalide (jamais NaN). */
   static timeToMinutes(timeStr: string | null | undefined): number | null {
-    if (!timeStr) return null;
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    if (isNaN(hours) || isNaN(minutes)) return null;
-    return hours * 60 + minutes;
+    return parseHM(timeStr);
   }
 
   // thresholds : si fourni, écrase les constantes REPORT_CONFIG.
@@ -54,23 +61,27 @@ export class ReportCalculator {
     let lateMinutes = 0;
     let overtimeMinutes = 0;
     let earlyExitMinutes = 0;
-    const breakMinutes = actualBreakMinutes ?? 0;
+    const breakMinutes = Math.max(0, Math.round(actualBreakMinutes ?? 0)) || 0;
 
-    const isWeekend = date ? date.getDay() === 0 || date.getDay() === 6 : false;
+    const weekend = date
+      ? !isWorkingDay(dayKeyOf(date, thresholds?.tz), thresholds?.holidays)
+      : false;
 
-    if (entry !== null && !isWeekend) {
-      const threshold = this.timeToMinutes(lateThresholdStr)!;
-      if (entry > threshold) {
+    if (entry !== null && !weekend) {
+      const threshold = this.timeToMinutes(lateThresholdStr);
+      if (threshold !== null && entry > threshold) {
         lateMinutes = entry - threshold;
       }
     }
 
     if (exit !== null) {
-      const overtimeThreshold = this.timeToMinutes(overtimeThresholdStr)!;
-      if (exit > overtimeThreshold) {
-        overtimeMinutes = exit - overtimeThreshold;
-      } else if (exit < overtimeThreshold - 1) {
-        earlyExitMinutes = overtimeThreshold - exit;
+      const overtimeThreshold = this.timeToMinutes(overtimeThresholdStr);
+      if (overtimeThreshold !== null) {
+        if (exit > overtimeThreshold) {
+          overtimeMinutes = exit - overtimeThreshold;
+        } else if (exit < overtimeThreshold - 1) {
+          earlyExitMinutes = overtimeThreshold - exit;
+        }
       }
     }
 

@@ -1,4 +1,5 @@
 import './load-env';
+import './work-time/enforce-timezone';
 import { validateApiEnv } from '@elitetime/config';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';

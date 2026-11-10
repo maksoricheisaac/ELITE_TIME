@@ -420,7 +420,9 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
       const total = team.length;
 
-      const absents = Math.max(0, total - presents);
+      // Un week-end n'est pas un jour ouvré : personne n'y est « absent »
+      const isOffDay = date.getDay() === 0 || date.getDay() === 6;
+      const absents = isOffDay ? 0 : Math.max(0, total - presents);
 
 
 

@@ -1,4 +1,5 @@
 "use client";
+import { BUSINESS_TIME_ZONE, minuteOfDay, parseHM } from "@elitetime/time";
 import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -719,10 +720,10 @@ export default function EmployeeDashboardClient({
 	const openBreak = breaks.find((b) => !b.endTime);
 	const minutesSince = (hhmm: string | null | undefined) => {
 		if (!hhmm) return 0;
-		const [h, m] = hhmm.split(":").map((v) => Number(v) || 0);
-		const start = new Date(currentTime);
-		start.setHours(h, m, 0, 0);
-		return Math.max(0, Math.floor((currentTime.getTime() - start.getTime()) / 60000));
+		// Heures « HH:mm » exprimées dans le fuseau métier : on compare à l'heure de Brazzaville, pas à celle du navigateur.
+		const start = parseHM(hhmm);
+		if (start === null) return 0;
+		return Math.max(0, minuteOfDay(currentTime, BUSINESS_TIME_ZONE) - start);
 	};
 	const workedMinutes: number | null = (() => {
 		if (!todayPointage?.entryTime) return null;

@@ -19,7 +19,7 @@ const DEFAULTS = {
   ldapSyncEnabled: false,
   ldapSyncIntervalMinutes: 60,
   dailyReportMode: 'YESTERDAY' as const,
-  timezone: 'Europe/Paris',
+  timezone: 'Africa/Brazzaville',
 };
 
 @Injectable()

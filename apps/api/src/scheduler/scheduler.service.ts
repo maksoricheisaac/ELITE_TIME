@@ -8,6 +8,7 @@ import {
   getCalendarDateInTZ,
 } from '../email/scheduled-email.service';
 import { PointagesService } from '../pointages/pointages.service';
+import { businessTimeZone } from '../work-time/work-time.service';
 
 const REMINDER_START_HOUR = 17;
 const REMINDER_START_MINUTE = 25;
@@ -162,7 +163,7 @@ export class SchedulerService implements OnModuleDestroy {
         select: { timezone: true },
       });
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-      const tz: string = (settings as any)?.timezone ?? 'Europe/Paris';
+      const tz: string = businessTimeZone();
 
       const jobs = await this.prisma.scheduledEmailJob.findMany({
         where: { enabled: true, hour, minute },

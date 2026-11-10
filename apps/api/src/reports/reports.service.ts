@@ -2,13 +2,20 @@ import {
   Injectable,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '@elitetime/database';
 import {
-  decryptUser,
-  decryptPointage,
-  decryptBreak,
-} from '@elitetime/shared';
+  addDays,
+  compareDays,
+  dayEnd,
+  dayKeyOf,
+  dayStart,
+  isValidDayKey,
+} from '@elitetime/time';
+import type { DayKey } from '@elitetime/time';
+import { WorkTimeService } from '../work-time/work-time.service';
+import { PrismaService } from '@elitetime/database';
+import { decryptUser, decryptPointage, decryptBreak } from '@elitetime/shared';
 import { groupPointagesByDay } from '../lib/reports/report-service';
 import { renderNewPointagesReportHtml } from '../lib/reports/new-pointages-report-template';
 import { generateNewExcelReport } from '../lib/reports/new-excel-generator';
@@ -19,16 +26,30 @@ import type { AuthenticatedUser } from '../auth/interfaces/authenticated-request
 
 @Injectable()
 export class ReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workTime: WorkTimeService,
+  ) {}
 
-  private async getThresholds() {
-    const s = await this.prisma.systemSettings.findFirst({
-      select: { workStartTime: true, workEndTime: true },
-    });
-    return {
-      lateThreshold: s?.workStartTime ?? '08:45',
-      overtimeThreshold: s?.workEndTime ?? '17:30',
-    };
+  /** Réglages de calcul (horaires, fériés, règle de pauses, fuseau) : un seul endroit, le moteur commun. */
+  private getThresholds() {
+    return this.workTime.reportThresholds();
+  }
+
+  /** « AAAA-MM-JJ » (ou ISO complet) → jour calendaire du fuseau métier ; refuse toute valeur invalide. */
+  private toDay(value: string): DayKey {
+    const head = typeof value === 'string' ? value.slice(0, 10) : '';
+    if (isValidDayKey(head)) return head;
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) {
+      throw new BadRequestException('Période invalide');
+    }
+    return dayKeyOf(d, this.workTime.tz);
+  }
+
+  private periodLabel(from: string, to: string): string {
+    const fmt = (k: DayKey) => k.split('-').reverse().join('/');
+    return `${fmt(this.toDay(from))} – ${fmt(this.toDay(to))}`;
   }
 
   /**
@@ -131,7 +152,7 @@ export class ReportsService {
       }),
     }));
 
-    const periodLabel = `${new Date(params.from).toLocaleDateString('fr-FR')} – ${new Date(params.to).toLocaleDateString('fr-FR')}`;
+    const periodLabel = this.periodLabel(params.from, params.to);
     const html = renderNewPointagesReportHtml({
       periodLabel,
       generatedAtLabel: new Date().toLocaleString('fr-FR'),
@@ -162,7 +183,7 @@ export class ReportsService {
       undefined,
       thresholds,
     );
-    const periodLabel = `${new Date(params.from).toLocaleDateString('fr-FR')} – ${new Date(params.to).toLocaleDateString('fr-FR')}`;
+    const periodLabel = this.periodLabel(params.from, params.to);
     return generateNewExcelReport(periodLabel, grouped);
   }
 
@@ -174,9 +195,8 @@ export class ReportsService {
     const dec = decryptUser(manager);
     const managerDept = dec.department ?? null;
 
-    const from = new Date();
-    from.setDate(from.getDate() - daysBack);
-    from.setHours(0, 0, 0, 0);
+    const tz = this.workTime.tz;
+    const from = dayStart(addDays(dayKeyOf(new Date(), tz), -daysBack), tz);
 
     const candidates = await this.prisma.user.findMany({
       where: {
@@ -215,10 +235,16 @@ export class ReportsService {
     to: string;
     employeeId?: string;
   }) {
-    const from = new Date(params.from);
-    from.setHours(0, 0, 0, 0);
-    const to = new Date(params.to);
-    to.setHours(23, 59, 59, 999);
+    const tz = this.workTime.tz;
+    const fromDay = this.toDay(params.from);
+    const toDay = this.toDay(params.to);
+    if (compareDays(fromDay, toDay) > 0) {
+      throw new BadRequestException(
+        'La date de début doit précéder la date de fin',
+      );
+    }
+    const from = dayStart(fromDay, tz);
+    const to = dayEnd(toDay, tz);
 
     // Pour un rapport individuel (employeeId fourni), on retire les filtres
     // hiddenFromLists/includeInReports : un manager/admin doit pouvoir exporter

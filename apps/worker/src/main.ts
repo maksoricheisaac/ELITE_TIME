@@ -4,6 +4,7 @@ import { config as loadRootEnv } from 'dotenv';
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 import { validateWorkerEnv } from '@elitetime/config';
+import 'api/work-time/enforce-timezone';
 import { WorkerModule } from './worker.module';
 
 // Développement : .env à la racine du monorepo en complément du .env local

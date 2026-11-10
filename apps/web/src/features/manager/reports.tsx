@@ -16,12 +16,16 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { formatMinutesHuman } from "@/lib/time-format";
 
 import { StatCard } from "@/components/ui/stat-card";
+import { countWorkingDays, dayKeyOf, normalizeHolidays } from "@elitetime/time";
+import { BUSINESS_TZ, businessDayKey, summarizePeriod } from "@/lib/period-stats";
 interface ManagerReportsClientProps {
   team: User[];
   pointages: Pointage[];
   breaks: BreakModel[];
   absences: Absence[];
   overtimeThreshold: number;
+  /** Jours fériés (SystemSettings.holidays) */
+  holidays?: unknown;
   canExportPdf?: boolean;
   canExportExcel?: boolean;
 }
@@ -38,26 +42,13 @@ interface EmployeeStats {
 
 }
 
-function countBusinessDays(start: Date, end: Date) {
-  const d = new Date(start);
-  let count = 0;
-  while (d <= end) {
-    const day = d.getDay();
-    if (day !== 0 && day !== 6) {
-      count += 1;
-    }
-    d.setDate(d.getDate() + 1);
-  }
-  return count;
-}
-
-
 export default function ManagerReportsClient({
   team,
   pointages,
   breaks,
   absences,
   overtimeThreshold,
+  holidays,
   canExportPdf = false,
   canExportExcel = false,
 }: ManagerReportsClientProps) {
@@ -177,7 +168,10 @@ export default function ManagerReportsClient({
 
   const stats: EmployeeStats[] = useMemo(() => {
 
-    const businessDays = countBusinessDays(from, to);
+    const fromKey = dayKeyOf(from, BUSINESS_TZ);
+    const toKey = dayKeyOf(to, BUSINESS_TZ);
+    const businessDays = countWorkingDays(fromKey, toKey, normalizeHolidays(holidays));
+
 
     const threshold = overtimeThreshold || 40;
 
@@ -215,63 +209,20 @@ export default function ManagerReportsClient({
 
 
 
+      // Jours pointés / congés approuvés / absences : classement exclusif du moteur commun.
       const workedDayKeys = new Set(
-
-        employeePointages.map((p) => {
-
-          const d = new Date(p.date as unknown as string);
-
-          return d.toDateString();
-
-        })
-
+        employeePointages
+          .map((p) => businessDayKey(p.date as unknown as string))
+          .filter((k): k is string => !!k),
       );
-
-      const employeeAbsences = absences.filter((a) => a.userId === employee.id);
-
-      let absenceCount = 0;
-
-      const cur = new Date(from);
-
-      cur.setHours(0, 0, 0, 0);
-
-      const end = new Date(to);
-
-      end.setHours(23, 59, 59, 999);
-
-      while (cur <= end) {
-
-        const dow = cur.getDay();
-
-        if (dow !== 0 && dow !== 6) {
-
-          if (!workedDayKeys.has(cur.toDateString())) {
-
-            const covered = employeeAbsences.some((a) => {
-
-              const s = new Date(a.startDate as unknown as string);
-
-              const e = new Date(a.endDate as unknown as string);
-
-              s.setHours(0, 0, 0, 0);
-
-              e.setHours(23, 59, 59, 999);
-
-              return cur >= s && cur <= e;
-
-            });
-
-            if (!covered) absenceCount++;
-
-          }
-
-        }
-
-        cur.setDate(cur.getDate() + 1);
-
-      }
-
-
+      const summary = summarizePeriod({
+        from: fromKey,
+        to: toKey,
+        workedDayKeys,
+        absences: absences.filter((a) => a.userId === employee.id),
+        holidays,
+      });
+      const absenceCount = summary.absentDays;
 
       const expectedMinutes = Math.round((businessDays / 5) * threshold * 60);
       const overtimeMinutes = Math.max(0, totalMinutes - expectedMinutes);
@@ -304,7 +255,7 @@ export default function ManagerReportsClient({
 
     });
 
-  }, [team, periodFilteredPointages, periodFilteredBreaks, absences, from, to, overtimeThreshold]);
+  }, [team, periodFilteredPointages, periodFilteredBreaks, absences, from, to, overtimeThreshold, holidays]);
 
 
 

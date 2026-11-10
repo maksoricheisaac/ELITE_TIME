@@ -12,6 +12,7 @@
     "dev:demo": "next dev -p 3011"
   },
   "dependencies": {
+    "@elitetime/time": "workspace:*",
     "@fontsource-variable/inter": "^5.3.0",
     "@hookform/resolvers": "^5.4.0",
     "@radix-ui/react-accordion": "^1.2.12",

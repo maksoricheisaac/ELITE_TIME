@@ -36,6 +36,19 @@ export class BreaksController {
     );
   }
 
+  /** Pauses d'une période (jours AAAA-MM-JJ du fuseau métier) — mêmes droits que /breaks/today. */
+  @Get()
+  async range(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @Query('userId') userId?: string,
+  ) {
+    const canViewOther = await this.canViewOtherBreaks(user);
+    const targetId = userId && canViewOther ? userId : user.id;
+    return this.service.getRange(targetId, from, to);
+  }
+
   @Get('today')
   async today(
     @CurrentUser() user: AuthenticatedUser,

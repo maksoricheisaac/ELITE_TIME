@@ -22,6 +22,7 @@ COPY apps/worker/package.json apps/worker/
 COPY packages/config/package.json packages/config/
 COPY packages/database/package.json packages/database/
 COPY packages/shared/package.json packages/shared/
+COPY packages/time/package.json packages/time/
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --filter "api..."
 
@@ -54,7 +55,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-cert
 WORKDIR /app
 COPY --from=build --chown=node:node /out/api /app
 USER node
-ENV NODE_ENV=production PORT=4000 HOST=0.0.0.0 TZ=Europe/Paris
+ENV NODE_ENV=production PORT=4000 HOST=0.0.0.0 TZ=Africa/Brazzaville
 EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=5 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||4000)+'/api/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"

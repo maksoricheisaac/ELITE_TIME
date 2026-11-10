@@ -35,6 +35,7 @@
     "@elitetime/config": "workspace:*",
     "@elitetime/database": "workspace:*",
     "@elitetime/shared": "workspace:*",
+    "@elitetime/time": "workspace:*",
     "@hono/node-server": "^2.0.4",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@nestjs/common": "^11.0.1",

@@ -9,22 +9,25 @@ import { StatusBadge, type StatusKey } from "@/components/ui/status-badge";
 import { DailyHoursChart, type DailyHoursPoint } from "@/components/charts/daily-hours-chart";
 import { EmployeeReportDateRangeFilter } from "@/features/manager/employee-report-date-range-filter";
 import { formatMinutesHuman } from "@/lib/time-format";
+import { eachDay, isWorkingDay, normalizeHolidays, parseHM, type DayKey } from "@elitetime/time";
+import { BUSINESS_TZ, businessDayKey, leaveDayKeys, summarizePeriod } from "@/lib/period-stats";
+import { dayKeyOf } from "@elitetime/time";
 
 interface MonRapportClientProps {
   pointages: Pointage[];
   absences: Absence[];
   workStartTime: string;
-  businessDays: number;
+  businessDays?: number;
+  /** Jours fériés (réglage SystemSettings.holidays) */
+  holidays?: unknown;
   resolvedFrom: string;
   resolvedTo: string;
   userFirstname: string;
 }
 
+/** Jour calendaire du fuseau métier (Africa/Brazzaville), identique à l'API et aux rapports. */
 function getDayKeyLocal(d: Date): string {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  return businessDayKey(d) ?? "";
 }
 
 type CalendarKind = "normal" | "late" | "incomplete" | "leave" | "absent" | "weekend" | "future";
@@ -45,16 +48,12 @@ export default function MonRapportClient({
   pointages,
   absences,
   workStartTime,
-  businessDays,
+  businessDays: _businessDaysFromServer,
+  holidays,
   resolvedFrom,
   resolvedTo,
   userFirstname,
 }: MonRapportClientProps) {
-  const [startHour, startMinute] = useMemo(
-    () => workStartTime.split(":").map(Number),
-    [workStartTime],
-  );
-
   // Les règles de calcul (retard, incomplet, présence, absences) sont inchangées.
   const stats = useMemo(() => {
     type DayGroup = { dateKey: string; sessions: Pointage[] };
@@ -79,14 +78,13 @@ export default function MonRapportClient({
     for (const { dateKey, sessions } of dayGroups) {
       const first = sessions[0];
       let lateMinutes = 0;
-      if (first?.entryTime && !Number.isNaN(startHour)) {
-        const [eh, em] = first.entryTime.split(":").map(Number);
-        if (!Number.isNaN(eh)) {
-          const diff = eh * 60 + em - (startHour * 60 + startMinute);
-          if (diff > 0) lateMinutes = diff;
-        }
+      const entryMin = parseHM(first?.entryTime);
+      const startMin = parseHM(workStartTime);
+      // Un retard n'existe que sur un jour ouvré (ni week-end ni férié), même règle que l'API.
+      if (entryMin !== null && startMin !== null && isWorkingDay(dateKey as DayKey, normalizeHolidays(holidays))) {
+        if (entryMin > startMin) lateMinutes = entryMin - startMin;
       }
-      const isLate = sessions.some((p) => p.status === "late") || lateMinutes > 0;
+      const isLate = lateMinutes > 0 || (sessions.some((p) => p.status === "late") && isWorkingDay(dateKey as DayKey, normalizeHolidays(holidays)));
       const isIncomplete = sessions.some((p) => p.status === "incomplete");
 
       if (isLate) {
@@ -104,38 +102,37 @@ export default function MonRapportClient({
     const punctualityRate = workedDays > 0 ? ((workedDays - lateCount) / workedDays) * 100 : 100;
 
     const workedDayKeys = new Set(dayGroups.map((g) => g.dateKey));
+    const holidaySet = normalizeHolidays(holidays);
     const approvedAbsences = absences.filter((a) => a.status === "approved");
-    const from = new Date(`${resolvedFrom}T00:00:00`);
-    const to = new Date(`${resolvedTo}T23:59:59`);
-    const isOnLeave = (d: Date) =>
-      approvedAbsences.some((a) => {
-        const s = new Date(a.startDate);
-        const e = new Date(a.endDate);
-        s.setHours(0, 0, 0, 0);
-        e.setHours(23, 59, 59, 999);
-        return d >= s && d <= e;
-      });
+    const leaveKeys = leaveDayKeys(approvedAbsences, resolvedFrom, resolvedTo, holidays);
+    const todayKey = dayKeyOf(new Date(), BUSINESS_TZ);
+    // Classement unique et exclusif (travaillé / congé / absent / futur) — moteur @elitetime/time
+    const summary = summarizePeriod({
+      from: resolvedFrom,
+      to: resolvedTo,
+      workedDayKeys,
+      absences: approvedAbsences,
+      holidays,
+      today: todayKey,
+    });
 
-    let absenceCount = 0;
     const calendar: { key: string; date: Date; kind: CalendarKind }[] = [];
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
-    const cur = new Date(from);
-    while (cur <= to) {
-      const key = getDayKeyLocal(cur);
-      const dow = cur.getDay();
+    for (const key of eachDay(resolvedFrom, resolvedTo)) {
       let kind: CalendarKind;
-      if (dow === 0 || dow === 6) kind = "weekend";
-      else if (workedDayKeys.has(key)) kind = dayKinds.get(key) ?? "normal";
-      else if (isOnLeave(cur)) {
-        kind = "leave";
-        absenceCount += 1;
-      } else kind = cur > todayEnd ? "future" : "absent";
-      calendar.push({ key, date: new Date(cur), kind });
-      cur.setDate(cur.getDate() + 1);
+      if (workedDayKeys.has(key)) kind = dayKinds.get(key) ?? "normal";
+      else if (!isWorkingDay(key, holidaySet)) kind = "weekend";
+      else if (leaveKeys.has(key)) kind = "leave";
+      else kind = key > todayKey ? "future" : "absent";
+      const [y, m, d] = key.split("-").map(Number);
+      calendar.push({ key, date: new Date(y, m - 1, d), kind });
     }
 
-    const presenceRate = businessDays > 0 ? (workedDays / businessDays) * 100 : 0;
+    const absenceCount = summary.leaveDays;
+    // Présence = jours ouvrés pointés / jours ouvrés écoulés (un week-end travaillé ne fait jamais dépasser 100 %)
+    const presenceRate =
+      summary.elapsedWorkingDays > 0
+        ? Math.min(100, (summary.workedDays / summary.elapsedWorkingDays) * 100)
+        : 0;
 
     return {
       totalMinutes,
@@ -148,11 +145,12 @@ export default function MonRapportClient({
       incompleteCount,
       completeDays,
       presenceRate,
+      workingDays: summary.workingDays,
       dayGroups,
       dayKinds,
       calendar,
     };
-  }, [pointages, absences, startHour, startMinute, businessDays, resolvedFrom, resolvedTo]);
+  }, [pointages, absences, workStartTime, holidays, resolvedFrom, resolvedTo]);
 
   const hoursData: DailyHoursPoint[] = useMemo(
     () =>
@@ -230,7 +228,7 @@ export default function MonRapportClient({
           <StatCard
             label="Présence"
             value={`${Math.round(stats.presenceRate)} %`}
-            hint={`${stats.workedDays} jour${stats.workedDays > 1 ? "s" : ""} pointé${stats.workedDays > 1 ? "s" : ""} sur ${businessDays} ouvré${businessDays > 1 ? "s" : ""}`}
+            hint={`${stats.workedDays} jour${stats.workedDays > 1 ? "s" : ""} pointé${stats.workedDays > 1 ? "s" : ""} sur ${stats.workingDays} ouvré${stats.workingDays > 1 ? "s" : ""}`}
           />
           <StatCard label="Temps travaillé" value={formatMinutesHuman(stats.totalMinutes)} hint="Total sur la période" />
           <StatCard label="Moyenne / jour" value={formatMinutesHuman(stats.avgMinutesPerDay)} hint="Sur les jours pointés" />

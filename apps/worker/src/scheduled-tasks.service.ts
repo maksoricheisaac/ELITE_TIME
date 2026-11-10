@@ -8,6 +8,7 @@ import {
 import { PointagesService } from 'api/pointages/pointages.service';
 import { LocksService } from './locks.service';
 import { RealtimeService } from './realtime.service';
+import { businessTimeZone } from 'api/work-time/work-time.service';
 
 /**
  * Logique des tâches récurrentes, reprise À L'IDENTIQUE de l'ancien
@@ -112,8 +113,7 @@ export class ScheduledTasksService {
     const settings = await this.prisma.systemSettings.findFirst({
       select: { timezone: true },
     });
-    const tz: string =
-      (settings as { timezone?: string } | null)?.timezone ?? 'Europe/Paris';
+    const tz: string = businessTimeZone();
 
     const jobs = await this.prisma.scheduledEmailJob.findMany({
       where: { enabled: true, hour, minute },

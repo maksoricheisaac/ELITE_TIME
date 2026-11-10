@@ -5,6 +5,7 @@ import { PrismaModule } from '@elitetime/database';
 import { LdapSyncService } from 'api/ldap/ldap-sync.service';
 import { ScheduledEmailService } from 'api/email/scheduled-email.service';
 import { PointagesService } from 'api/pointages/pointages.service';
+import { WorkTimeService } from 'api/work-time/work-time.service';
 import { REDIS, RedisProviderModule } from './redis.provider';
 import { SCHEDULED_QUEUE } from './queues';
 import { LocksService } from './locks.service';
@@ -32,6 +33,7 @@ import { HealthServer } from './health.server';
   providers: [
     // Services métier réutilisés tels quels depuis l'API (dépendent de PrismaService seul)
     LdapSyncService,
+    WorkTimeService,
     ScheduledEmailService,
     PointagesService,
     LocksService,

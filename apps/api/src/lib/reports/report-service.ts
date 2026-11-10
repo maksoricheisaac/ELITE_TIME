@@ -1,5 +1,17 @@
-import { ReportCalculator, ReportThresholds } from './report-calculator';
+import {
+  REPORT_CONFIG,
+  ReportCalculator,
+  ReportThresholds,
+} from './report-calculator';
 import type { User, Pointage, Break } from '@elitetime/database';
+import {
+  BUSINESS_TIME_ZONE,
+  computeDayMetrics,
+  dayKeyOf,
+  weekdayOf,
+  zonedTimeToDate,
+} from '@elitetime/time';
+import type { DayKey } from '@elitetime/time';
 
 export interface GroupedDayData {
   date: Date;
@@ -21,27 +33,6 @@ export interface GroupedDayData {
   }>;
 }
 
-// Extrait "YYYY-MM-DD" en utilisant les getters locaux du process Node.js.
-// Contrairement à .toISOString() qui retourne toujours UTC, cette fonction
-// respecte le fuseau horaire système — indispensable pour que les pointages
-// enregistrés en heure locale soient rattachés au bon jour calendaire.
-function toLocalDateStr(d: Date | string): string {
-  const date = d instanceof Date ? d : new Date(d);
-  return (
-    `${date.getFullYear()}-` +
-    `${String(date.getMonth() + 1).padStart(2, '0')}-` +
-    `${String(date.getDate()).padStart(2, '0')}`
-  );
-}
-
-// Crée une Date à minuit LOCAL pour un "YYYY-MM-DD".
-// new Date("YYYY-MM-DD") crée minuit UTC, ce qui peut décaler getDay() d'un jour
-// sur un serveur en UTC+. new Date(y, m-1, d) crée minuit local — getDay() fiable.
-function localDateFromStr(s: string): Date {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
 const JOURS_FR = [
   'Dimanche',
   'Lundi',
@@ -52,38 +43,54 @@ const JOURS_FR = [
   'Samedi',
 ];
 
-function buildDateLabel(date: Date): string {
-  const j = String(date.getDate()).padStart(2, '0');
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  return `${JOURS_FR[date.getDay()]} ${j}/${m}/${date.getFullYear()}`;
+/** « Lundi 09/11/2026 » à partir d'une clé de jour (aucun fuseau impliqué : le jour est déjà calendaire). */
+function buildDateLabel(day: DayKey): string {
+  const [y, m, d] = day.split('-');
+  return `${JOURS_FR[weekdayOf(day)]} ${d}/${m}/${y}`;
 }
 
 export function groupPointagesByDay(
   users: User[],
   pointages: Pointage[],
   breaks: Break[],
-  _tz?: string, // conservé pour compatibilité de signature — ignoré volontairement
+  tzParam?: string,
   thresholds?: Partial<ReportThresholds>,
 ): GroupedDayData[] {
-  // 1. Jours existants UNIQUEMENT depuis les pointages.
+  const tz = tzParam ?? thresholds?.tz ?? BUSINESS_TIME_ZONE;
+  const daySettings = {
+    workStartTime: thresholds?.lateThreshold ?? REPORT_CONFIG.LATE_THRESHOLD,
+    workEndTime:
+      thresholds?.overtimeThreshold ?? REPORT_CONFIG.OVERTIME_THRESHOLD,
+    breakDeductionMode: thresholds?.breakMode ?? ('recorded' as const),
+    flatBreakMinutes:
+      thresholds?.flatBreakMinutes ?? REPORT_CONFIG.DEFAULT_BREAK_MINUTES,
+  };
+
+  // 1. Jours existants UNIQUEMENT depuis les pointages (jour calendaire du fuseau métier).
   //    Les pauses (Break) ne créent jamais une journée dans le rapport.
-  const allDates = new Set<string>();
-  pointages.forEach((p) => allDates.add(toLocalDateStr(p.date)));
+  const allDates = new Set<DayKey>();
+  // Un pointage dont la date est illisible est ignoré (jamais d'exception ni de jour inventé).
+  pointages = pointages.filter(
+    (p) => !Number.isNaN(new Date(p.date).getTime()),
+  );
+  breaks = breaks.filter((b) => !Number.isNaN(new Date(b.date).getTime()));
+  pointages.forEach((p) => allDates.add(dayKeyOf(new Date(p.date), tz)));
 
   const days: GroupedDayData[] = [];
 
   for (const dayStr of Array.from(allDates).sort()) {
-    const date = localDateFromStr(dayStr);
-
     // 2. Dimanches exclus — jamais travaillés, même si des données existent.
-    if (date.getDay() === 0) continue;
+    if (weekdayOf(dayStr) === 0) continue;
+    const date = zonedTimeToDate(dayStr, 0, tz);
 
     const employees: GroupedDayData['employees'] = [];
 
     for (const u of users) {
       // 3. Pointages de cet employé pour ce jour, triés par session.
       const userPointages = pointages
-        .filter((p) => p.userId === u.id && toLocalDateStr(p.date) === dayStr)
+        .filter(
+          (p) => p.userId === u.id && dayKeyOf(new Date(p.date), tz) === dayStr,
+        )
         .sort((a, b) => (a.sessionNumber || 1) - (b.sessionNumber || 1));
 
       // 4. Aucun pointage ce jour → employé absent → exclu du rapport.
@@ -96,11 +103,7 @@ export function groupPointagesByDay(
       // 5. Pauses du jour — utilisées pour le calcul de durée uniquement,
       //    jamais pour construire des journées.
       const userBreaks = breaks.filter(
-        (b) => b.userId === u.id && toLocalDateStr(b.date) === dayStr,
-      );
-      const totalBreakMinutes = userBreaks.reduce(
-        (sum, b) => sum + (b.duration || 0),
-        0,
+        (b) => b.userId === u.id && dayKeyOf(new Date(b.date), tz) === dayStr,
       );
 
       // 6. Statut de la journée.
@@ -116,9 +119,6 @@ export function groupPointagesByDay(
         !isIncomplete && userPointages.some((p) => p.status === 'admin_closed');
 
       // 7. Horaires : TOUJOURS depuis les champs métier entryTime / exitTime.
-      //    Le champ `date` n'est utilisé que pour identifier le jour, jamais
-      //    pour reconstruire des horaires (il vaut minuit UTC pour les pointages
-      //    manager, ce qui rendrait tout recalcul incorrect).
       const checkIn = firstPointage.entryTime || '—';
       const checkOut = isIncomplete
         ? 'Départ non pointé'
@@ -150,39 +150,31 @@ export function groupPointagesByDay(
               .join(', ')
           : null;
 
-      // 9. Métriques calculées.
-      let computation: ReturnType<typeof ReportCalculator.compute>;
-      if (isIncomplete) {
-        const lateComp = ReportCalculator.compute(
-          firstPointage.entryTime,
-          null,
-          0,
-          undefined,
-          date,
-          thresholds,
-        );
-        computation = {
-          workMinutes: 0,
-          breakMinutes: 0,
-          lateMinutes: lateComp.lateMinutes,
-          overtimeMinutes: 0,
-          earlyExitMinutes: 0,
-        };
-      } else {
-        const totalWorkMinutes = userPointages.reduce(
-          (sum, p) => sum + (p.duration || 0),
-          0,
-        );
-        const baseComp = ReportCalculator.compute(
-          firstPointage.entryTime,
-          lastPointage.exitTime,
-          totalBreakMinutes,
-          undefined,
-          date,
-          thresholds,
-        );
-        computation = { ...baseComp, workMinutes: totalWorkMinutes };
-      }
+      // 9. Métriques : MOTEUR COMMUN (@elitetime/time) — mêmes règles que les écrans et l'API.
+      //    Temps travaillé = sessions valides − pauses incluses dans ces sessions (jamais de double déduction).
+      const m = computeDayMetrics(
+        dayStr,
+        userPointages.map((p) => ({
+          sessionNumber: p.sessionNumber || 1,
+          entryTime: p.entryTime,
+          exitTime: p.exitTime,
+        })),
+        userBreaks.map((b) => ({
+          day: dayStr,
+          startTime: b.startTime,
+          endTime: b.endTime,
+        })),
+        daySettings,
+        { tz, holidays: thresholds?.holidays },
+      );
+      const computation: ReturnType<typeof ReportCalculator.compute> = {
+        workMinutes: m.netMinutes,
+        breakMinutes: m.breakMinutes + m.flatDeductionMinutes,
+        lateMinutes: m.lateMinutes,
+        // Départ non pointé : l'heure de fin réelle est inconnue → ni heures sup. ni départ anticipé.
+        overtimeMinutes: isIncomplete ? 0 : m.overtimeMinutes,
+        earlyExitMinutes: isIncomplete ? 0 : m.earlyExitMinutes,
+      };
 
       employees.push({
         id: u.id,
@@ -194,7 +186,7 @@ export function groupPointagesByDay(
         sessionDetails,
         lateReason,
         earlyExitReason,
-        breakMinutes: totalBreakMinutes,
+        breakMinutes: computation.breakMinutes,
         computation,
         status: isIncomplete
           ? 'incomplete'
@@ -205,7 +197,7 @@ export function groupPointagesByDay(
     }
 
     if (employees.length > 0) {
-      days.push({ date, dateLabel: buildDateLabel(date), employees });
+      days.push({ date, dateLabel: buildDateLabel(dayStr), employees });
     }
   }
 

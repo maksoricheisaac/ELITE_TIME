@@ -1,0 +1,28 @@
+{
+  "name": "@elitetime/time",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Moteur de calcul temporel d'ELITE TIME : fuseau métier, jours ouvrés, durées, pauses, retards, heures sup., congés. Fonctions pures, sans dépendance, partagées par l'API, le worker et le web.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.0.0",
+    "jest": "^30.0.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.3"
+  },
+  "jest": {
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": { "^.+\\.ts$": "ts-jest" },
+    "moduleFileExtensions": ["js", "json", "ts"],
+    "testEnvironment": "node"
+  }
+}

@@ -30,6 +30,7 @@ import { SeedModule } from './seed/seed.module';
 import { LdapModule } from './ldap/ldap.module';
 import { EmailModule } from './email/email.module';
 import { AiModule } from './ai/ai.module';
+import { WorkTimeModule } from './work-time/work-time.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { AiModule } from './ai/ai.module';
     // RUN_SCHEDULERS=false quand le service worker (apps/worker) est déployé,
     // sinon elles s'exécuteraient deux fois.
     ...(process.env.RUN_SCHEDULERS !== 'false' ? [SchedulerModule] : []),
+    WorkTimeModule,
     PointagesModule,
     BreaksModule,
     AbsencesModule,

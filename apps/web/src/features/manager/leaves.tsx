@@ -1,5 +1,6 @@
 "use client";
 
+import { leaveBreakdown } from "@elitetime/time";
 import { useMemo, useState, useTransition } from "react";
 import type { User, Absence, AbsenceType, UserRole } from "@/types/models";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,11 +41,12 @@ const TYPE_LABELS: Record<AbsenceType, string> = {
   autre: "Autre",
 };
 
+/**
+ * Durée d'un congé en JOURS OUVRÉS (lundi-vendredi, fuseau métier) — la valeur à décompter d'un solde.
+ * Les week-ends inclus dans la plage ne sont plus comptés comme des jours de congé.
+ */
 function computeDurationDays(startDate: string, endDate: string): number {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const diffMs = end.setHours(0, 0, 0, 0) - start.setHours(0, 0, 0, 0);
-  return Math.round(diffMs / 86400000) + 1;
+  return leaveBreakdown({ startDate, endDate }).workingDays;
 }
 
 function formatDecisionAuthor(author?: { firstname: string; lastname: string } | null): string {

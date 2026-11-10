@@ -13,6 +13,8 @@ import { ArrowLeft, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { EmployeePointagesDetailTable, type EmployeePointageDetailRow } from "@/features/manager/employee-pointages-detail-table";
 import { EmployeeReportDateRangeFilter } from "@/features/manager/employee-report-date-range-filter";
 import { EmployeeReportExports } from "@/features/manager/employee-report-exports";
+import { addDays, countWorkingDays, dayEnd, dayKeyOf, dayStart, isValidDayKey, isWorkingDay, normalizeHolidays, parseHM } from "@elitetime/time";
+import { BUSINESS_TZ, summarizePeriod } from "@/lib/period-stats";
 
 interface EmployeeReportDetailPageProps {
   params: Promise<{ employeeId: string }>;
@@ -21,24 +23,9 @@ interface EmployeeReportDetailPageProps {
 
 const PAGE_SIZE = 15;
 
-function countBusinessDays(start: Date, end: Date) {
-  const d = new Date(start);
-  let count = 0;
-  while (d <= end) {
-    const day = d.getDay();
-    if (day !== 0 && day !== 6) {
-      count += 1;
-    }
-    d.setDate(d.getDate() + 1);
-  }
-  return count;
-}
-
+/** Jour calendaire du fuseau métier — jamais le jour du serveur ni le jour UTC. */
 function getDayKeyLocal(d: Date): string {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  return dayKeyOf(d, BUSINESS_TZ);
 }
 
 export default async function EmployeeReportDetailPage({ params, searchParams }: EmployeeReportDetailPageProps) {
@@ -61,32 +48,30 @@ export default async function EmployeeReportDetailPage({ params, searchParams }:
     redirect("/reports");
   }
 
-  // Plage de dates
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-  const defaultFrom = new Date();
-  defaultFrom.setDate(today.getDate() - 30);
-  defaultFrom.setHours(0, 0, 0, 0);
-
-  const parsedFrom = sp.from ? new Date(sp.from) : defaultFrom;
-  const parsedTo = sp.to ? new Date(sp.to) : today;
-
-  const from = Number.isNaN(parsedFrom.getTime()) ? defaultFrom : parsedFrom;
-  const to = Number.isNaN(parsedTo.getTime()) ? today : parsedTo;
-
-  const fromStr = getDayKeyLocal(from);
-  const toStr = getDayKeyLocal(to);
+  // Période en JOURS calendaires du fuseau métier (aucun décalage d'instant possible).
+  const todayKey = dayKeyOf(new Date(), BUSINESS_TZ);
+  const pick = (v: string | undefined, fallback: string) => {
+    const k = (v ?? "").slice(0, 10);
+    return isValidDayKey(k) ? k : fallback;
+  };
+  let fromStr = pick(sp.from, addDays(todayKey, -30));
+  let toStr = pick(sp.to, todayKey);
+  if (fromStr > toStr) [fromStr, toStr] = [toStr, fromStr];
+  const from = dayStart(fromStr, BUSINESS_TZ);
+  const to = dayEnd(toStr, BUSINESS_TZ);
 
   const [pointages, breaks, settings, employeeAbsences] = await Promise.all([
     serverGet<Pointage[]>(`/pointages?userId=${employee.id}&from=${fromStr}&to=${toStr}`),
-    serverGet<Break[]>(`/breaks/today?userId=${employee.id}`),
+    serverGet<Break[]>(`/breaks?userId=${employee.id}&from=${fromStr}&to=${toStr}`),
     serverGet<SystemSettings>('/settings'),
     serverGet<Absence[]>(`/absences?userId=${employee.id}`),
   ]);
 
   const overtimeThreshold = settings?.overtimeThreshold ?? 40;
   const workStartTime = settings?.workStartTime ?? "08:45";
-  const [startHour, startMinute] = workStartTime.split(":").map(Number);
+  const holidays = (settings as unknown as { holidays?: unknown } | null)?.holidays;
+  const holidaySet = normalizeHolidays(holidays);
+  const startMin = parseHM(workStartTime);
 
   // Pauses par jour
   const breaksByDay = new Map<string, number>();
@@ -127,15 +112,12 @@ export default async function EmployeeReportDetailPage({ params, searchParams }:
     const totalDuration = sessions.reduce((sum, p) => sum + (p.duration ?? 0), 0);
     const sessionCount = sessions.length;
 
-    let lateMinutes = 0;
-    if (first.entryTime) {
-      const [eh, em] = first.entryTime.split(":").map(Number);
-      if (!Number.isNaN(eh) && !Number.isNaN(startHour)) {
-        const diff = eh * 60 + em - (startHour * 60 + startMinute);
-        if (diff > 0) lateMinutes = diff;
-      }
-    }
-
+    // Retard : première entrée après l'heure de début, jour ouvré uniquement (même règle que l'API)
+    const entryMin = parseHM(first.entryTime);
+    const lateMinutes =
+      entryMin !== null && startMin !== null && isWorkingDay(dateKey, holidaySet) && entryMin > startMin
+        ? entryMin - startMin
+        : 0;
     const allIncomplete = sessions.every((p) => p.status === "incomplete" && !p.exitTime);
     const anyLate = sessions.some((p) => p.status === "late") || lateMinutes > 0;
     const aggStatus: string = allIncomplete ? "incomplete" : anyLate ? "late" : (first.status ?? "normal");
@@ -160,46 +142,31 @@ export default async function EmployeeReportDetailPage({ params, searchParams }:
 
   // Stats globales (sur toute la période, pas juste la page)
   const totalMinutes = pointages.reduce((sum: number, p: Pointage) => sum + p.duration, 0);
-  const lateCount = allDayGroups.filter(({ sessions }) =>
-    sessions.some((p) => p.status === "late") ||
-    (() => {
-      const first = sessions[0];
-      if (!first?.entryTime) return false;
-      const [eh, em] = first.entryTime.split(":").map(Number);
-      return eh * 60 + em > startHour * 60 + startMinute;
-    })()
+  const lateCount = allDayGroups.filter(
+    ({ dateKey, sessions }) =>
+      isWorkingDay(dateKey, holidaySet) &&
+      (sessions.some((p) => p.status === "late") ||
+        (() => {
+          const e = parseHM(sessions[0]?.entryTime);
+          return e !== null && startMin !== null && e > startMin;
+        })()),
   ).length;
 
-  const businessDays = countBusinessDays(from, to);
-
-  const workedDayKeys = new Set(allDayGroups.map((g) => g.dateKey));
-  const approvedAbsences = (employeeAbsences ?? []).filter((a) => a.status === "approved");
-  let absenceCount = 0;
-  const cur = new Date(from);
-  cur.setHours(0, 0, 0, 0);
-  const rangeEnd = new Date(to);
-  rangeEnd.setHours(23, 59, 59, 999);
-  while (cur <= rangeEnd) {
-    const dow = cur.getDay();
-    if (dow !== 0 && dow !== 6) {
-      const key = getDayKeyLocal(cur);
-      if (!workedDayKeys.has(key)) {
-        const covered = approvedAbsences.some((a) => {
-          const s = new Date(a.startDate as unknown as string);
-          const e = new Date(a.endDate as unknown as string);
-          s.setHours(0, 0, 0, 0);
-          e.setHours(23, 59, 59, 999);
-          return cur >= s && cur <= e;
-        });
-        if (!covered) absenceCount++;
-      }
-    }
-    cur.setDate(cur.getDate() + 1);
-  }
+  const businessDays = countWorkingDays(fromStr, toStr, holidaySet);
+  const summary = summarizePeriod({
+    from: fromStr,
+    to: toStr,
+    workedDayKeys: allDayGroups.map((g) => g.dateKey),
+    absences: employeeAbsences ?? [],
+    holidays,
+    today: todayKey,
+  });
+  // Absences non justifiées : jours ouvrés écoulés sans pointage ni congé approuvé (jamais les jours futurs)
+  const absenceCount = summary.absentDays;
 
   const expectedMinutes = Math.round((businessDays / 5) * overtimeThreshold * 60);
   const overtimeMinutes = Math.max(0, totalMinutes - expectedMinutes);
-  const rangeLabel = `${from.toLocaleDateString("fr-FR")} – ${to.toLocaleDateString("fr-FR")}`;
+  const rangeLabel = `${fromStr.split("-").reverse().join("/")} – ${toStr.split("-").reverse().join("/")}`;
 
   // Toutes les lignes pour les exports (sans pagination)
   const allRows: EmployeePointageDetailRow[] = allDayGroups.map(buildRow);

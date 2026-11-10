@@ -2,65 +2,101 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@elitetime/database';
 import { encrypt, decrypt } from '@elitetime/shared';
 import { decryptBreak } from '@elitetime/shared';
+import {
+  dayEnd,
+  dayKeyOf,
+  dayStart,
+  formatHM,
+  isValidDayKey,
+  minuteOfDay,
+  parseHM,
+} from '@elitetime/time';
+import { WorkTimeService } from '../work-time/work-time.service';
 
 @Injectable()
 export class BreaksService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workTime: WorkTimeService,
+  ) {}
+
+  private todayBounds() {
+    const day = dayKeyOf(new Date(), this.workTime.tz);
+    return {
+      day,
+      range: {
+        gte: dayStart(day, this.workTime.tz),
+        lte: dayEnd(day, this.workTime.tz),
+      },
+    };
+  }
 
   async getTodayBreaks(userId: string) {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
+    const { range } = this.todayBounds();
     const rows = await this.prisma.break.findMany({
-      where: { userId, date: { gte: start, lte: end } },
+      where: { userId, date: range },
+    });
+    return rows.map((b) => decryptBreak(b));
+  }
+
+  async getRange(userId: string, from: string, to: string) {
+    if (!isValidDayKey(from) || !isValidDayKey(to) || from > to) {
+      throw new BadRequestException('Période invalide (AAAA-MM-JJ attendu)');
+    }
+    const tz = this.workTime.tz;
+    const rows = await this.prisma.break.findMany({
+      where: {
+        userId,
+        date: { gte: dayStart(from, tz), lte: dayEnd(to, tz) },
+      },
+      orderBy: { date: 'asc' },
     });
     return rows.map((b) => decryptBreak(b));
   }
 
   async start(userId: string) {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-
-    const activeBreak = await this.prisma.break.findFirst({
-      where: { userId, date: { gte: start, lte: end }, endTime: null },
-    });
-    if (activeBreak) {
-      throw new BadRequestException('Une pause est déjà en cours');
-    }
-
+    const { range } = this.todayBounds();
     const now = new Date();
-    const startTime = now.toTimeString().slice(0, 5);
-    const b = await this.prisma.break.create({
-      data: { userId, date: now, startTime: encrypt(startTime) },
+    const startTime = formatHM(minuteOfDay(now, this.workTime.tz));
+
+    // Verrou par employé : deux clics simultanés ne créent pas deux pauses ouvertes.
+    const b = await this.workTime.withUserLock(userId, async (tx) => {
+      const activeBreak = await tx.break.findFirst({
+        where: { userId, date: range, endTime: null },
+      });
+      if (activeBreak) {
+        throw new BadRequestException('Une pause est déjà en cours');
+      }
+      return tx.break.create({
+        data: { userId, date: now, startTime: encrypt(startTime) },
+      });
     });
     return decryptBreak(b);
   }
 
   async end(userId: string) {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
+    const { day, range } = this.todayBounds();
 
-    const activeBreak = await this.prisma.break.findFirst({
-      where: { userId, date: { gte: start, lte: end }, endTime: null },
+    const updated = await this.workTime.withUserLock(userId, async (tx) => {
+      const activeBreak = await tx.break.findFirst({
+        where: { userId, date: range, endTime: null },
+      });
+      if (!activeBreak) return null;
+
+      const endTime = formatHM(minuteOfDay(new Date(), this.workTime.tz));
+      const startMin = parseHM(decrypt(activeBreak.startTime));
+      const endMin = parseHM(endTime)!;
+      // Jamais de durée négative ni NaN : une pause illisible compte 0.
+      const duration = startMin === null ? 0 : Math.max(0, endMin - startMin);
+
+      const row = await tx.break.update({
+        where: { id: activeBreak.id },
+        data: { endTime: encrypt(endTime), duration },
+      });
+      // La pause change le temps travaillé de la journée : on remet les durées en accord.
+      await this.workTime.recomputeDay(userId, day, tx);
+      return row;
     });
-    if (!activeBreak) return null;
-
-    const now = new Date();
-    const endTime = now.toTimeString().slice(0, 5);
-    const startTime = decrypt(activeBreak.startTime);
-    const [sh, sm] = startTime.split(':').map(Number);
-    const [eh, em] = endTime.split(':').map(Number);
-    const duration = Math.max(0, eh * 60 + em - (sh * 60 + sm));
-
-    const updated = await this.prisma.break.update({
-      where: { id: activeBreak.id },
-      data: { endTime: encrypt(endTime), duration },
-    });
-    return decryptBreak(updated);
+    return updated ? decryptBreak(updated) : null;
   }
 }

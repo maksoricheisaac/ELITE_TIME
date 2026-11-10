@@ -14,6 +14,7 @@ import { generateNewExcelReport } from '../lib/reports/new-excel-generator';
 import { renderPdfFromHtml } from '../lib/reports/html-to-pdf';
 import { buildEmailBodyHtml } from '../lib/reports/email-body-template';
 import type { DailyReportMode } from '@elitetime/database';
+import { WorkTimeService } from '../work-time/work-time.service';
 
 // ── Helpers timezone ────────────────────────────────────────────────────────
 
@@ -205,7 +206,10 @@ function getLastMonthPeriod(tz: string) {
 export class ScheduledEmailService {
   private readonly logger = new Logger(ScheduledEmailService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workTime: WorkTimeService,
+  ) {}
 
   async runJob(jobId: string): Promise<void> {
     const job = await this.prisma.scheduledEmailJob.findUnique({
@@ -218,12 +222,10 @@ export class ScheduledEmailService {
       return;
     }
 
+    // Fuseau métier unique (jamais le réglage libre « timezone » : les pointages sont en heure de Brazzaville).
     const settings = await this.prisma.systemSettings.findFirst();
-    const tz: string = settings?.timezone ?? 'Europe/Paris';
-    const thresholds = {
-      lateThreshold: settings?.workStartTime ?? '08:45',
-      overtimeThreshold: settings?.workEndTime ?? '17:30',
-    };
+    const thresholds = await this.workTime.reportThresholds();
+    const tz: string = thresholds.tz;
 
     if (job.type === 'WEEKLY_REPORT' && job.weekday != null) {
       const todayWeekday = getCalendarDateInTZ(new Date(), tz).dow;

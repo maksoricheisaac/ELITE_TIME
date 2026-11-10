@@ -27,7 +27,7 @@ x-logging: &logging
 
 x-app-env: &app-env
   NODE_ENV: production
-  TZ: ${TZ:-Europe/Paris}
+  TZ: ${TZ:-Africa/Brazzaville}
   DATABASE_URL: postgresql://${POSTGRES_USER:-elitetime}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requis}@postgres:5432/${POSTGRES_DB:-elitetime}
   REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD requis}@redis:6379
   REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-elitetime:}
@@ -56,7 +56,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-elitetime}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requis}
       POSTGRES_DB: ${POSTGRES_DB:-elitetime}
-      TZ: ${TZ:-Europe/Paris}
+      TZ: ${TZ:-Africa/Brazzaville}
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks: [data]
@@ -186,7 +186,7 @@ services:
     <<: [*restart, *logging]
     environment:
       NODE_ENV: production
-      TZ: ${TZ:-Europe/Paris}
+      TZ: ${TZ:-Africa/Brazzaville}
       PORT: "3000"
       HOSTNAME: 0.0.0.0
       # Appels serveur Next -> API par le réseau Docker interne

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@elitetime/database';
 import { encrypt, decrypt } from '@elitetime/shared';
 import { decryptUser } from '@elitetime/shared';
+import { businessTimeZone } from '../work-time/work-time.service';
 
 @Injectable()
 export class EmailSchedulingService {
@@ -88,7 +89,7 @@ export class EmailSchedulingService {
 
     return {
       eligibleUsers,
-      timezone: settings?.timezone ?? 'Europe/Paris',
+      timezone: businessTimeZone(),
       dailyReportMode: settings?.dailyReportMode ?? 'YESTERDAY',
       daily: findJob('DAILY_REPORT'),
       weekly: findJob('WEEKLY_REPORT'),
