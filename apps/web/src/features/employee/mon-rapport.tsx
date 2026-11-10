@@ -2,20 +2,11 @@
 
 import { useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Clock,
-  CalendarDays,
-  TimerReset,
-  AlarmClockOff,
-  Hourglass,
-  Percent,
-  CalendarX,
-  AlertTriangle,
-  CheckCircle2,
-} from "lucide-react";
 import type { Pointage, Absence } from "@/types/models";
-import { PresenceChart } from "@/components/charts/presence-chart";
-import { RetardChart } from "@/components/charts/retard-chart";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { StatusBadge, type StatusKey } from "@/components/ui/status-badge";
+import { DailyHoursChart, type DailyHoursPoint } from "@/components/charts/daily-hours-chart";
 import { EmployeeReportDateRangeFilter } from "@/features/manager/employee-report-date-range-filter";
 import { formatMinutesHuman } from "@/lib/time-format";
 
@@ -36,27 +27,19 @@ function getDayKeyLocal(d: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  accent = "text-foreground",
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  accent?: string;
-}) {
-  return (
-    <div className="space-y-1 rounded-lg border bg-background/60 p-3">
-      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        <Icon className="h-3.5 w-3.5" />
-        <span>{label}</span>
-      </div>
-      <p className={`text-2xl font-bold ${accent}`}>{value}</p>
-    </div>
-  );
-}
+type CalendarKind = "normal" | "late" | "incomplete" | "leave" | "absent" | "weekend" | "future";
+
+const CAL_STYLE: Record<CalendarKind, { cls: string; label: string }> = {
+  normal: { cls: "bg-success-soft text-success border-success/30", label: "À l'heure" },
+  late: { cls: "bg-warning-soft text-warning border-warning/30", label: "Retard" },
+  incomplete: { cls: "bg-danger-soft text-danger border-danger/30", label: "Incomplet" },
+  leave: { cls: "bg-info-soft text-info border-info/30", label: "Congé" },
+  absent: { cls: "bg-neutral-soft text-muted-foreground border-border", label: "Sans pointage" },
+  weekend: { cls: "bg-transparent text-muted-foreground/50 border-transparent", label: "Week-end" },
+  future: { cls: "bg-transparent text-muted-foreground/50 border-border border-dashed", label: "À venir" },
+};
+
+const MAX_CALENDAR_DAYS = 93;
 
 export default function MonRapportClient({
   pointages,
@@ -72,8 +55,8 @@ export default function MonRapportClient({
     [workStartTime],
   );
 
+  // Les règles de calcul (retard, incomplet, présence, absences) sont inchangées.
   const stats = useMemo(() => {
-    // Regroupe les sessions par jour (un jour peut avoir plusieurs pointages / sessions).
     type DayGroup = { dateKey: string; sessions: Pointage[] };
     const dayGroupsMap = new Map<string, DayGroup>();
     for (const p of pointages) {
@@ -91,8 +74,9 @@ export default function MonRapportClient({
     let totalLateMinutes = 0;
     let incompleteCount = 0;
     let completeDays = 0;
+    const dayKinds = new Map<string, "normal" | "late" | "incomplete">();
 
-    for (const { sessions } of dayGroups) {
+    for (const { dateKey, sessions } of dayGroups) {
       const first = sessions[0];
       let lateMinutes = 0;
       if (first?.entryTime && !Number.isNaN(startHour)) {
@@ -114,33 +98,40 @@ export default function MonRapportClient({
       } else if (!isLate) {
         completeDays += 1;
       }
+      dayKinds.set(dateKey, isIncomplete ? "incomplete" : isLate ? "late" : "normal");
     }
 
-    const avgLateMinutes = lateCount > 0 ? totalLateMinutes / lateCount : 0;
     const punctualityRate = workedDays > 0 ? ((workedDays - lateCount) / workedDays) * 100 : 100;
 
-    // Absences approuvées dans la période, calculées à partir des jours ouvrés non travaillés.
     const workedDayKeys = new Set(dayGroups.map((g) => g.dateKey));
     const approvedAbsences = absences.filter((a) => a.status === "approved");
     const from = new Date(`${resolvedFrom}T00:00:00`);
     const to = new Date(`${resolvedTo}T23:59:59`);
+    const isOnLeave = (d: Date) =>
+      approvedAbsences.some((a) => {
+        const s = new Date(a.startDate);
+        const e = new Date(a.endDate);
+        s.setHours(0, 0, 0, 0);
+        e.setHours(23, 59, 59, 999);
+        return d >= s && d <= e;
+      });
+
     let absenceCount = 0;
+    const calendar: { key: string; date: Date; kind: CalendarKind }[] = [];
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
     const cur = new Date(from);
     while (cur <= to) {
+      const key = getDayKeyLocal(cur);
       const dow = cur.getDay();
-      if (dow !== 0 && dow !== 6) {
-        const key = getDayKeyLocal(cur);
-        if (!workedDayKeys.has(key)) {
-          const covered = approvedAbsences.some((a) => {
-            const s = new Date(a.startDate);
-            const e = new Date(a.endDate);
-            s.setHours(0, 0, 0, 0);
-            e.setHours(23, 59, 59, 999);
-            return cur >= s && cur <= e;
-          });
-          if (covered) absenceCount += 1;
-        }
-      }
+      let kind: CalendarKind;
+      if (dow === 0 || dow === 6) kind = "weekend";
+      else if (workedDayKeys.has(key)) kind = dayKinds.get(key) ?? "normal";
+      else if (isOnLeave(cur)) {
+        kind = "leave";
+        absenceCount += 1;
+      } else kind = cur > todayEnd ? "future" : "absent";
+      calendar.push({ key, date: new Date(cur), kind });
       cur.setDate(cur.getDate() + 1);
     }
 
@@ -152,55 +143,47 @@ export default function MonRapportClient({
       avgMinutesPerDay,
       lateCount,
       totalLateMinutes,
-      avgLateMinutes,
       punctualityRate,
       absenceCount,
       incompleteCount,
       completeDays,
       presenceRate,
       dayGroups,
+      dayKinds,
+      calendar,
     };
   }, [pointages, absences, startHour, startMinute, businessDays, resolvedFrom, resolvedTo]);
 
-  const presenceData = useMemo(() => {
-    const from = new Date(`${resolvedFrom}T00:00:00`);
-    const to = new Date(`${resolvedTo}T23:59:59`);
-    const days = Math.max(1, Math.round((to.getTime() - from.getTime()) / 86400000) + 1);
-    const workedDayKeys = new Set(stats.dayGroups.map((g) => g.dateKey));
+  const hoursData: DailyHoursPoint[] = useMemo(
+    () =>
+      stats.dayGroups.map(({ dateKey, sessions }) => ({
+        label: new Date(`${dateKey}T00:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }),
+        hours: Math.round((sessions.reduce((s, p) => s + (p.duration ?? 0), 0) / 60) * 10) / 10,
+        kind: stats.dayKinds.get(dateKey) ?? "normal",
+      })),
+    [stats.dayGroups, stats.dayKinds],
+  );
 
-    return Array.from({ length: days }, (_, i) => {
-      const date = new Date(from);
-      date.setDate(date.getDate() + i);
-      const key = getDayKeyLocal(date);
-      const present = workedDayKeys.has(key) ? 1 : 0;
-      return {
-        date: date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" }),
-        presents: present,
-        absents: present ? 0 : 1,
-        total: 1,
-      };
-    });
-  }, [resolvedFrom, resolvedTo, stats.dayGroups]);
+  // Détail jour par jour (plus récent d'abord)
+  const dailyRows = useMemo(
+    () =>
+      [...stats.dayGroups].reverse().map(({ dateKey, sessions }) => {
+        const sorted = [...sessions].sort((a, b) => (a.sessionNumber ?? 1) - (b.sessionNumber ?? 1));
+        const entry = sorted[0]?.entryTime ?? null;
+        const exit = [...sorted].reverse().find((p) => p.exitTime)?.exitTime ?? null;
+        return {
+          dateKey,
+          entry,
+          exit,
+          minutes: sessions.reduce((s, p) => s + (p.duration ?? 0), 0),
+          sessions: sessions.length,
+          status: (stats.dayKinds.get(dateKey) ?? "normal") as StatusKey,
+        };
+      }),
+    [stats.dayGroups, stats.dayKinds],
+  );
 
-  const retardData = useMemo(() => {
-    return stats.dayGroups.map(({ dateKey, sessions }) => {
-      const first = sessions[0];
-      let lateMinutes = 0;
-      if (first?.entryTime && !Number.isNaN(startHour)) {
-        const [eh, em] = first.entryTime.split(":").map(Number);
-        if (!Number.isNaN(eh)) {
-          const diff = eh * 60 + em - (startHour * 60 + startMinute);
-          if (diff > 0) lateMinutes = diff;
-        }
-      }
-      const date = new Date(`${dateKey}T00:00:00`);
-      return {
-        date: date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" }),
-        retards: lateMinutes > 0 ? 1 : 0,
-        moyenneRetard: lateMinutes,
-      };
-    });
-  }, [stats.dayGroups, startHour, startMinute]);
+  const defaultRange = useMemo(() => ({ from: resolvedFrom, to: resolvedTo }), [resolvedFrom, resolvedTo]);
 
   const rangeLabel = useMemo(() => {
     const from = new Date(`${resolvedFrom}T00:00:00`);
@@ -208,125 +191,192 @@ export default function MonRapportClient({
     return `${from.toLocaleDateString("fr-FR")} – ${to.toLocaleDateString("fr-FR")}`;
   }, [resolvedFrom, resolvedTo]);
 
+  // Calendrier en semaines (lundi → dimanche)
+  const weeks = useMemo(() => {
+    if (stats.calendar.length === 0 || stats.calendar.length > MAX_CALENDAR_DAYS) return [];
+    const cells: ((typeof stats.calendar)[number] | null)[] = [];
+    const lead = (stats.calendar[0].date.getDay() + 6) % 7;
+    for (let i = 0; i < lead; i++) cells.push(null);
+    cells.push(...stats.calendar);
+    while (cells.length % 7 !== 0) cells.push(null);
+    const rows: typeof cells[] = [];
+    for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+    return rows;
+  }, [stats.calendar]);
+
+  const fmtDay = (key: string) =>
+    new Date(`${key}T00:00:00`).toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "short" });
+
   return (
-    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl md:text-3xl">
-            Mon rapport
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {userFirstname ? `Tableau de bord personnel de ${userFirstname}` : "Votre tableau de bord personnel"} — période : {rangeLabel}.
-          </p>
+    <div className="space-y-6">
+      <PageHeader
+        title="Mon rapport"
+        description={`${userFirstname ? `Activité de ${userFirstname}` : "Votre activité"} · ${rangeLabel}`}
+        actions={<EmployeeReportDateRangeFilter defaultRange={defaultRange} />}
+      />
+
+      <section aria-labelledby="rapport-kpi" className="space-y-3">
+        <h2 id="rapport-kpi" className="sr-only">Résumé de la période</h2>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+          <StatCard
+            label="Présence"
+            value={`${Math.round(stats.presenceRate)} %`}
+            hint={`${stats.workedDays} jour${stats.workedDays > 1 ? "s" : ""} pointé${stats.workedDays > 1 ? "s" : ""} sur ${businessDays} ouvré${businessDays > 1 ? "s" : ""}`}
+          />
+          <StatCard label="Temps travaillé" value={formatMinutesHuman(stats.totalMinutes)} hint="Total sur la période" />
+          <StatCard label="Moyenne / jour" value={formatMinutesHuman(stats.avgMinutesPerDay)} hint="Sur les jours pointés" />
+          <StatCard
+            label="Retards"
+            value={stats.lateCount}
+            tone={stats.lateCount ? "warning" : "success"}
+            toneLabel={stats.lateCount ? "Retard" : "Aucun"}
+            hint={stats.lateCount ? `${formatMinutesHuman(stats.totalLateMinutes)} cumulées` : "Aucun retard"}
+          />
+          <StatCard
+            label="Ponctualité"
+            value={`${Math.round(stats.punctualityRate)} %`}
+            hint="Jours pointés à l'heure"
+          />
+          <StatCard
+            label="Congés / absences"
+            value={stats.absenceCount}
+            hint={
+              stats.incompleteCount
+                ? `${stats.incompleteCount} pointage${stats.incompleteCount > 1 ? "s" : ""} incomplet${stats.incompleteCount > 1 ? "s" : ""}`
+                : "Jours de congé approuvé"
+            }
+            tone={stats.incompleteCount ? "danger" : "neutral"}
+            toneLabel={stats.incompleteCount ? "À régulariser" : undefined}
+          />
         </div>
-        <div className="w-full sm:w-auto sm:max-w-xs">
-          <EmployeeReportDateRangeFilter />
+      </section>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <DailyHoursChart
+            data={hoursData}
+            title="Heures travaillées par jour"
+            description={`Durée enregistrée chaque jour pointé · ${rangeLabel}`}
+          />
         </div>
+
+        <Card className="gap-3 py-4 shadow-none">
+          <CardHeader className="px-4">
+            <CardTitle className="text-base font-semibold">Calendrier de la période</CardTitle>
+            <CardDescription className="text-xs">Statut de chaque jour ouvré</CardDescription>
+          </CardHeader>
+          <CardContent className="px-4">
+            {weeks.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                {stats.calendar.length === 0
+                  ? "Aucune période sélectionnée."
+                  : `Période trop longue pour le calendrier (plus de ${MAX_CALENDAR_DAYS} jours) : utilisez le tableau ci-dessous.`}
+              </p>
+            ) : (
+              <>
+                <div role="grid" aria-label="Calendrier de la période" className="space-y-1">
+                  <div role="row" className="grid grid-cols-7 gap-1 text-center text-[11px] text-muted-foreground">
+                    {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => (
+                      <span key={i} role="columnheader">{d}</span>
+                    ))}
+                  </div>
+                  {weeks.map((week, wi) => (
+                    <div key={wi} role="row" className="grid grid-cols-7 gap-1">
+                      {week.map((c, ci) =>
+                        c ? (
+                          <span
+                            key={c.key}
+                            role="gridcell"
+                            title={`${fmtDay(c.key)} : ${CAL_STYLE[c.kind].label}`}
+                            aria-label={`${fmtDay(c.key)} : ${CAL_STYLE[c.kind].label}`}
+                            className={`tabular flex aspect-square items-center justify-center rounded-md border text-xs ${CAL_STYLE[c.kind].cls}`}
+                          >
+                            <span className="flex flex-col items-center leading-none">
+                              {c.date.getDate()}
+                              {(c.date.getDate() === 1 || c.key === stats.calendar[0]?.key) && (
+                                <span className="mt-0.5 text-[9px] font-medium uppercase opacity-80">
+                                  {c.date.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "")}
+                                </span>
+                              )}
+                            </span>
+                          </span>
+                        ) : (
+                          <span key={`e-${wi}-${ci}`} role="gridcell" aria-hidden="true" />
+                        ),
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  {(["normal", "late", "incomplete", "leave", "absent"] as CalendarKind[]).map((k) => (
+                    <li key={k} className="flex items-center gap-1.5">
+                      <span className={`size-3 rounded-sm border ${CAL_STYLE[k].cls}`} aria-hidden="true" />
+                      {CAL_STYLE[k].label}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Résumé */}
-      <Card className="border border-primary/20 rounded-xl shadow-md">
-        <CardHeader>
-          <CardTitle className="text-lg md:text-xl">Résumé</CardTitle>
-          <CardDescription>Vue d&apos;ensemble de votre activité sur la période sélectionnée.</CardDescription>
+      <Card className="gap-3 py-4 shadow-none">
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-base font-semibold">Détail jour par jour</CardTitle>
+          <CardDescription className="text-xs">
+            {dailyRows.length} jour{dailyRows.length > 1 ? "s" : ""} pointé{dailyRows.length > 1 ? "s" : ""}
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              icon={CheckCircle2}
-              label="Présence globale"
-              value={`${Math.round(stats.presenceRate)}%`}
-              accent="text-emerald-600 dark:text-emerald-400"
-            />
-            <StatCard
-              icon={AlarmClockOff}
-              label="Retards"
-              value={String(stats.lateCount)}
-              accent="text-amber-600 dark:text-amber-400"
-            />
-            <StatCard
-              icon={CalendarX}
-              label="Absences"
-              value={String(stats.absenceCount)}
-              accent="text-destructive"
-            />
-            <StatCard
-              icon={Clock}
-              label="Temps travaillé"
-              value={formatMinutesHuman(stats.totalMinutes)}
-            />
-          </div>
+        <CardContent className="px-0 sm:px-6">
+          {dailyRows.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+              Aucun pointage sur cette période — élargissez les dates pour voir votre historique.
+            </p>
+          ) : (
+            <>
+              <table className="hidden w-full text-sm sm:table">
+                <thead>
+                  <tr className="text-left text-xs text-muted-foreground">
+                    <th className="py-2 pr-3 font-medium">Jour</th>
+                    <th className="py-2 pr-3 font-medium">Arrivée</th>
+                    <th className="py-2 pr-3 font-medium">Départ</th>
+                    <th className="py-2 pr-3 text-right font-medium">Sessions</th>
+                    <th className="py-2 pr-3 text-right font-medium">Durée</th>
+                    <th className="py-2 text-right font-medium">Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dailyRows.map((r) => (
+                    <tr key={r.dateKey} className="h-11 border-t border-border">
+                      <td className="pr-3 first-letter:uppercase">{fmtDay(r.dateKey)}</td>
+                      <td className="tabular pr-3">{r.entry ?? "—"}</td>
+                      <td className="tabular pr-3">{r.exit ?? "—"}</td>
+                      <td className="tabular pr-3 text-right">{r.sessions}</td>
+                      <td className="tabular pr-3 text-right">{r.minutes > 0 ? formatMinutesHuman(r.minutes) : "—"}</td>
+                      <td className="text-right"><StatusBadge status={r.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <ul className="divide-y divide-border sm:hidden">
+                {dailyRows.map((r) => (
+                  <li key={r.dateKey} className="flex items-center justify-between gap-3 px-4 py-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium first-letter:uppercase">{fmtDay(r.dateKey)}</p>
+                      <p className="tabular text-xs text-muted-foreground">
+                        {r.entry ?? "—"} → {r.exit ?? "—"} · {r.minutes > 0 ? formatMinutesHuman(r.minutes) : "—"}
+                        {r.sessions > 1 ? ` · ${r.sessions} sessions` : ""}
+                      </p>
+                    </div>
+                    <StatusBadge status={r.status} />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </CardContent>
       </Card>
-
-      {/* Temps de travail */}
-      <Card className="border border-primary/20 rounded-xl shadow-md">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-            <Clock className="h-5 w-5 text-primary" />
-            <span>Temps de travail</span>
-          </CardTitle>
-          <CardDescription>Volume horaire réalisé sur la période.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-            <StatCard icon={Clock} label="Heures travaillées" value={formatMinutesHuman(stats.totalMinutes)} />
-            <StatCard icon={CalendarDays} label="Jours travaillés" value={String(stats.workedDays)} />
-            <StatCard icon={TimerReset} label="Temps moyen / jour" value={formatMinutesHuman(stats.avgMinutesPerDay)} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Ponctualité */}
-      <Card className="border border-primary/20 rounded-xl shadow-md">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-            <AlarmClockOff className="h-5 w-5 text-primary" />
-            <span>Ponctualité</span>
-          </CardTitle>
-          <CardDescription>Suivi de vos retards sur la période.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard icon={AlarmClockOff} label="Nombre de retards" value={String(stats.lateCount)} accent="text-amber-600 dark:text-amber-400" />
-            <StatCard icon={Hourglass} label="Durée totale des retards" value={formatMinutesHuman(stats.totalLateMinutes)} />
-            <StatCard icon={Hourglass} label="Durée moyenne des retards" value={formatMinutesHuman(stats.avgLateMinutes)} />
-            <StatCard icon={Percent} label="Taux de ponctualité" value={`${Math.round(stats.punctualityRate)}%`} accent="text-emerald-600 dark:text-emerald-400" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Présence */}
-      <Card className="border border-primary/20 rounded-xl shadow-md">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-            <CalendarDays className="h-5 w-5 text-primary" />
-            <span>Présence</span>
-          </CardTitle>
-          <CardDescription>Répartition de vos jours d&apos;absence et de présence complète.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-            <StatCard icon={CalendarX} label="Jours d'absence" value={String(stats.absenceCount)} accent="text-destructive" />
-            <StatCard icon={AlertTriangle} label="Pointages incomplets" value={String(stats.incompleteCount)} accent="text-sky-600 dark:text-sky-400" />
-            <StatCard icon={CheckCircle2} label="Jours parfaitement complétés" value={String(stats.completeDays)} accent="text-emerald-600 dark:text-emerald-400" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Graphiques */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <PresenceChart
-          data={presenceData}
-          title="Ma présence"
-          description={`Présence ou absence quotidienne sur la période sélectionnée`}
-        />
-        <RetardChart
-          data={retardData}
-          title="Mes retards"
-          description="Jours avec retard sur la période sélectionnée"
-        />
-      </div>
     </div>
   );
 }

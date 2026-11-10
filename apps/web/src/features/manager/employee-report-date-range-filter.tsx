@@ -45,7 +45,12 @@ function useDebounce<T extends (value: DateRange | undefined) => void>(
   }, [callback, delay]);
 }
 
-export function EmployeeReportDateRangeFilter() {
+export function EmployeeReportDateRangeFilter({
+  defaultRange,
+}: {
+  /** Plage affichée quand l'URL n'a ni `from` ni `to` (format AAAA-MM-JJ). Défaut : aujourd'hui. */
+  defaultRange?: { from: string; to: string };
+} = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -55,7 +60,10 @@ export function EmployeeReportDateRangeFilter() {
     const fromParam = searchParams?.get("from") ?? undefined;
     const toParam = searchParams?.get("to") ?? undefined;
 
-    // Si aucune date n'est définie dans l'URL, on applique aujourd'hui par défaut
+    // Si aucune date n'est définie dans l'URL : plage par défaut de la page, sinon aujourd'hui
+    if (!fromParam && !toParam && defaultRange) {
+      return { from: fromISODate(defaultRange.from) ?? undefined, to: fromISODate(defaultRange.to) ?? undefined };
+    }
     if (!fromParam && !toParam) {
       const today = new Date();
       const defaultFrom = new Date(today);
@@ -70,7 +78,7 @@ export function EmployeeReportDateRangeFilter() {
     const to = fromISODate(toParam) ?? undefined;
 
     return { from, to };
-  }, [searchParams]);
+  }, [searchParams, defaultRange]);
 
   // localRange tracks what the user is editing in the picker.
   // On first render it is undefined; once the user starts picking, it overrides the URL range.

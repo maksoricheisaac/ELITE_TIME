@@ -82,6 +82,16 @@ export default function OperationalDashboard({ stats, variant }: Props) {
     return { from: f, to: e, periodLabel: fl === el ? fl : `${fl} – ${el}` };
   }, [searchParams]);
 
+  // Plage par défaut (30 jours) affichée dans le filtre tant que l'URL n'en précise pas
+  const defaultRange = useMemo(() => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const key = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 30);
+    return { from: key(start), to: key(end) };
+  }, []);
+
   // Résultat associé à la requête qui l'a produit : « chargement » = résultat périmé
   const requestKey = `${variant}|${from.toISOString()}|${to.toISOString()}`;
   const [result, setResult] = useState<{ key: string; data: DashboardChartData } | null>(null);
@@ -116,7 +126,7 @@ export default function OperationalDashboard({ stats, variant }: Props) {
           day: "numeric",
           month: "long",
         })}`}
-        actions={<EmployeeReportDateRangeFilter />}
+        actions={<EmployeeReportDateRangeFilter defaultRange={defaultRange} />}
       />
 
       {t ? (

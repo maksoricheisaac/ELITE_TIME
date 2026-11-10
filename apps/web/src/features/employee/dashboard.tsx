@@ -7,9 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useNotification } from "@/contexts/notification-context";
 import { formatMinutesHuman } from "@/lib/time-format";
 import { useRealtime } from "@/contexts/realtime-context";
-import { Coffee, AlertTriangle, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Coffee, AlertTriangle, Loader2, LogIn, LogOut, Timer } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { SafeUser } from "@/lib/session";
-import type { Pointage, Break as BreakModel } from "@/types/models";
+import type { Pointage, Absence, Break as BreakModel } from "@/types/models";
 import { useRouter } from "next/navigation";
 import { startEmployeePointage, endEmployeePointage, updateEmployeeLateReason, updateEmployeeEarlyExitReason } from "@/actions/employee/pointages";
 import { startEmployeeBreak, endEmployeeBreak } from "@/actions/employee/breaks";
@@ -35,6 +39,10 @@ interface EmployeeDashboardClientProps {
 	initialBreaks: Break[];
 	isOnLeaveToday?: boolean;
 	incompletePointages?: Pointage[];
+	/** Derniers pointages (14 derniers jours, plus récents d'abord) */
+	recentPointages?: Pointage[];
+	/** Demandes de congé en attente ou à venir */
+	leaveRequests?: Absence[];
 }
 
 
@@ -47,6 +55,8 @@ export default function EmployeeDashboardClient({
 	initialBreaks,
 	isOnLeaveToday = false,
 	incompletePointages = [],
+	recentPointages = [],
+	leaveRequests = [],
 }: EmployeeDashboardClientProps) {
 	const { showSuccess, showInfo, showError, showWarning } = useNotification();
 	const router = useRouter();
@@ -515,21 +525,7 @@ export default function EmployeeDashboardClient({
 
 
 
-	const computedWorkedHours = (() => {
 
-	if (!todayPointage?.entryTime || !isActive || isOnBreak) return null;
-
-	const startDate = new Date(`${todayISO}T${todayPointage.entryTime}`);
-
-	const diffMs = currentTime.getTime() - startDate.getTime();
-
-	if (diffMs <= 0) return null;
-
-	const hours = Math.floor(diffMs / 3600000);
-
-	return hours;
-
-	})();
 
 
 
@@ -722,27 +718,35 @@ export default function EmployeeDashboardClient({
 
 
 
+	// ── Indicateurs d'affichage (aucune règle métier modifiée) ──
+	const completedBreakMinutes = breaks.reduce((sum, b) => sum + (b.endTime ? (b.duration ?? 0) : 0), 0);
+	const openBreak = breaks.find((b) => !b.endTime);
+	const minutesSince = (hhmm: string | null | undefined) => {
+		if (!hhmm) return 0;
+		const [h, m] = hhmm.split(":").map((v) => Number(v) || 0);
+		const start = new Date(currentTime);
+		start.setHours(h, m, 0, 0);
+		return Math.max(0, Math.floor((currentTime.getTime() - start.getTime()) / 60000));
+	};
+	const workedMinutes: number | null = (() => {
+		if (!todayPointage?.entryTime) return null;
+		if (todayPointage.exitTime && !isActive) return todayPointage.duration ?? null;
+		const elapsed = minutesSince(todayPointage.entryTime);
+		const onBreakNow = openBreak ? minutesSince(openBreak.startTime) : 0;
+		return Math.max(0, elapsed - completedBreakMinutes - onBreakNow);
+	})();
+	const statusTone = isOnLeaveToday ? "bg-muted-foreground" : isOnBreak ? "bg-warning" : isWorking ? "bg-success" : "bg-muted-foreground";
+	const fmtDay = (d: unknown) =>
+		new Date(d as string).toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "short" });
+	const fmtDuration = (min: number | null | undefined) => (min && min > 0 ? formatMinutesHuman(min) : "—");
+	const LEAVE_TYPE: Record<string, string> = { conge: "Congé payé", maladie: "Maladie", autre: "Autre" };
+
 	return (
-
-	<div className="space-y-4 sm:space-y-6 lg:space-y-8">
-
-		<div>
-
-		<h1 className="text-xl font-semibold tracking-tight sm:text-2xl md:text-3xl">
-
-			Bonjour, <span className="text-primary">{user.firstname || ""}</span>
-
-		</h1>
-
-		<p className="text-muted-foreground">
-
-			{formatDateFR(currentTime)}
-
-		</p>
-
-		</div>
-
-
+	<div className="space-y-6">
+		<PageHeader
+			title={`Bonjour, ${user.firstname || ""}`}
+			description={formatDateFR(currentTime)}
+		/>
 
 		<Dialog open={showAlertCard} onOpenChange={setShowAlertCard}>
 
@@ -968,321 +972,249 @@ export default function EmployeeDashboardClient({
 			</DialogContent>
 		</Dialog>
 
-		<Card className="border border-primary/30 bg-card rounded-xl shadow-md">
-
-		<CardHeader>
-
-			<CardTitle className="flex items-center justify-between gap-2">
-
-			<span>Pointage du jour</span>
-
-			<span className="inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur-sm">
-
-				<span
-
-				className={`h-2.5 w-2.5 rounded-full ${
-
-					isOnLeaveToday
-
-					? "bg-muted"
-
-					: isOnBreak
-
-					? "bg-warning animate-pulse"
-
-					: isWorking
-
-					? "bg-success animate-pulse"
-
-					: "bg-muted"
-
-				}`}
-
-				/>
-
-				<span>{currentStatusLabel}</span>
-
-			</span>
-
-			</CardTitle>
-
-			<CardDescription>{currentStatusDescription}</CardDescription>
-
-		</CardHeader>
-
-			<CardContent className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-center md:justify-between">
-
-				<div className="space-y-3">
-
+		{(incompletePointages.length > 0 || (isActive && isPointedByAdmin)) && (
+			<div className="space-y-3">
 				{incompletePointages.length > 0 && (
-					<div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/50 rounded-lg p-3 flex items-start gap-3 mb-2 animate-in fade-in slide-in-from-top-2 duration-500">
-						<div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-full shrink-0">
-							<AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-						</div>
-						<div className="flex-1">
-							<p className="text-xs font-bold text-red-900 dark:text-red-200 uppercase tracking-wider">
-								Pointage(s) incomplet(s)
-							</p>
-							<p className="text-[11px] text-red-700 dark:text-red-400 mt-1 leading-relaxed">
+					<div role="alert" className="flex items-start gap-3 rounded-xl border border-danger/30 bg-danger-soft p-4">
+						<AlertTriangle className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden="true" />
+						<div className="text-sm">
+							<p className="font-medium text-danger">Pointage incomplet à régulariser</p>
+							<p className="mt-0.5 text-foreground/80">
 								{incompletePointages.length === 1
 									? `Vous n'avez pas pointé votre heure de départ le ${new Date(incompletePointages[0].date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}.`
-									: `Vous avez ${incompletePointages.length} jour(s) sans pointage de départ (dernier : ${new Date(incompletePointages[0].date).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}).`}
-								{" "}Veuillez contacter votre responsable pour corriger la situation.
+									: `Vous avez ${incompletePointages.length} jours sans pointage de départ (dernier : ${new Date(incompletePointages[0].date).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}).`}{" "}
+								Contactez votre responsable pour corriger la situation.
 							</p>
 						</div>
 					</div>
 				)}
-
 				{isActive && isPointedByAdmin && (
-					<div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 rounded-lg p-3 flex items-start gap-3 mb-2 animate-in fade-in slide-in-from-top-2 duration-500">
-						<div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-full shrink-0">
-							<Coffee className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-						</div>
-						<div className="flex-1">
-							<p className="text-xs font-bold text-amber-900 dark:text-amber-200 uppercase tracking-wider">Pointage Administratif</p>
-							<p className="text-[11px] text-amber-700 dark:text-amber-400 mt-1 leading-relaxed">
+					<div role="status" className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning-soft p-4">
+						<Coffee className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
+						<div className="text-sm">
+							<p className="font-medium text-warning">Pointage administratif</p>
+							<p className="mt-0.5 text-foreground/80">
 								Votre entrée a été enregistrée par l&apos;administration. Vous pouvez continuer votre journée normalement (pause, sortie).
 							</p>
 						</div>
 					</div>
 				)}
+			</div>
+		)}
 
-				{todayPointage?.entryTime ? (
-
-				<p className="text-sm text-muted-foreground">
-
-				Arrivée : {todayPointage.entryTime}
-
-				{computedWorkedHours !== null &&
-
-					` • Temps travaillé estimé : ${computedWorkedHours}h`}
-
-				</p>
-
-			) : (
-
-				<p className="text-sm text-muted-foreground">
-
-				{isOnLeaveToday
-
-					? "Vous êtes en congé aujourd'hui."
-
-					: "Vous n'avez pas encore pointé aujourd'hui."}
-
-					</p>
-
-				)}
-
-				<div className="space-y-2">
-
-					<div className="flex items-center justify-between text-xs text-muted-foreground">
-
-					<span>Objectif du jour</span>
-
-					<span className="font-medium text-foreground">
-
-						{workStartTime} → {workEndTime}
-
-					</span>
-
+		<div className="grid gap-4 lg:grid-cols-3">
+			{/* Aujourd'hui */}
+			<Card className="gap-4 py-4 shadow-none lg:col-span-2">
+				<CardHeader className="px-4 sm:px-6">
+					<div className="flex items-center justify-between gap-3">
+						<CardTitle className="text-base font-semibold">Aujourd&apos;hui</CardTitle>
+						<span className="inline-flex items-center gap-2 rounded-full bg-muted px-2.5 py-1 text-xs font-medium">
+							<span className={`size-2 rounded-full ${statusTone}`} aria-hidden="true" />
+							{currentStatusLabel}
+						</span>
 					</div>
-
-				</div>
-
-				</div>
-
-			<div className="flex flex-col items-stretch gap-2 md:w-56 lg:w-64">
-
-			<Button
-
-				onClick={handlePrimaryCta}
-
-				disabled={primaryCtaDisabled}
-
-				variant={(isActive || hasIncompleteSession) ? "destructive" : "default"}
-
-				className="h-12 text-base font-semibold cursor-pointer"
-
-			>
-
-				{isPending ? (
-					<>
-						<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-						Enregistrement…
-					</>
-				) : (
-					primaryCtaLabel
-				)}
-
-			</Button>
-
-			{isActive && !isOnLeaveToday && (
-				isOnBreak ? (
-					<Button
-						onClick={handleBreakEnd}
-						disabled={isPending}
-						variant="outline"
-						className="h-10 text-sm font-medium cursor-pointer"
-					>
-						{isPending ? (
-							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-						) : (
-							<Coffee className="mr-2 h-4 w-4" />
+					<CardDescription>{currentStatusDescription}</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-5 px-4 sm:px-6">
+					<dl className="grid grid-cols-3 gap-3">
+						<div className="rounded-lg border border-border p-3">
+							<dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
+								<LogIn className="size-3.5" aria-hidden="true" /> Arrivée
+							</dt>
+							<dd className="tabular mt-1 text-xl font-semibold sm:text-2xl">{todayPointage?.entryTime ?? "—"}</dd>
+						</div>
+						<div className="rounded-lg border border-border p-3">
+							<dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
+								<LogOut className="size-3.5" aria-hidden="true" /> Départ
+							</dt>
+							<dd className="tabular mt-1 text-xl font-semibold sm:text-2xl">{todayPointage?.exitTime ?? "—"}</dd>
+						</div>
+						<div className="rounded-lg border border-border p-3">
+							<dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
+								<Timer className="size-3.5" aria-hidden="true" /> Travail
+							</dt>
+							<dd className="tabular mt-1 text-xl font-semibold sm:text-2xl">
+								{workedMinutes !== null ? formatMinutesHuman(workedMinutes) : "—"}
+							</dd>
+						</div>
+					</dl>
+					<p className="text-xs text-muted-foreground">
+						Horaires prévus : <span className="tabular font-medium text-foreground">{workStartTime} → {workEndTime}</span>
+						{isActive && workedMinutes !== null && " · temps de travail estimé, pauses déduites"}
+						{todayLateDelayLabel && (
+							<> · <span className="font-medium text-warning">retard de {todayLateDelayLabel}</span></>
 						)}
-						Terminer la pause
-					</Button>
-				) : (
-					<Button
-						onClick={handleBreakStart}
-						disabled={isPending}
-						variant="outline"
-						className="h-10 text-sm font-medium cursor-pointer"
-					>
-						{isPending ? (
-							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-						) : (
-							<Coffee className="mr-2 h-4 w-4" />
-						)}
-						Démarrer une pause
-					</Button>
-				)
-			)}
-
-			<p className="text-xs text-muted-foreground text-center">
-
-				{hasMounted ? currentTime.toLocaleTimeString("fr-FR") : ""}
-
-			</p>
-
-			</div>
-
-		</CardContent>
-
-		</Card>
-
-
-
-		
-
-		<Card className="bg-card/80 shadow-sm">
-
-			<CardHeader>
-
-			<CardTitle>Statut Actuel</CardTitle>
-
-			</CardHeader>
-
-			<CardContent>
-
-			<div className="flex items-center gap-4">
-
-				<div
-
-				className={`h-4 w-4 rounded-full ${
-
-					isOnLeaveToday
-
-					? "bg-muted"
-
-					: isOnBreak
-
-					? "bg-warning animate-pulse"
-
-					: isWorking
-
-					? "bg-success animate-pulse"
-
-					: "bg-muted"
-
-				}`}
-
-				/>
-
-				<div>
-
-				<p className="font-semibold">
-
-					{isOnLeaveToday
-
-						? "En congé"
-
-						: isOnBreak
-
-						? "En pause"
-
-						: isWorking
-
-						? "En activité"
-
-						: "Hors service"}
-
-				</p>
-
-				{todayPointage?.entryTime && (
-
-					<p className="text-sm text-muted-foreground">
-
-					Arrivée: {todayPointage.entryTime}
-
-					{computedWorkedHours !== null &&
-
-						` • Temps travaillé: ${computedWorkedHours}h`}
-
 					</p>
 
-				)}
+					<div className="flex flex-col gap-2 sm:flex-row">
+						<Button
+							onClick={handlePrimaryCta}
+							disabled={primaryCtaDisabled}
+							variant={(isActive || hasIncompleteSession) ? "destructive" : "default"}
+							className="h-12 flex-1 cursor-pointer text-base font-semibold"
+						>
+							{isPending ? (
+								<>
+									<Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+									Enregistrement…
+								</>
+							) : (
+								primaryCtaLabel
+							)}
+						</Button>
+						{isActive && !isOnLeaveToday && (
+							<Button
+								onClick={isOnBreak ? handleBreakEnd : handleBreakStart}
+								disabled={isPending}
+								variant="outline"
+								className="h-12 cursor-pointer sm:w-56"
+							>
+								<Coffee className="mr-2 size-4" aria-hidden="true" />
+								{isOnBreak ? "Terminer la pause" : "Démarrer une pause"}
+							</Button>
+						)}
+					</div>
+					<p className="tabular text-center text-xs text-muted-foreground" aria-hidden="true">
+						{hasMounted ? currentTime.toLocaleTimeString("fr-FR") : ""}
+					</p>
 
+					{dayActions.length > 0 && (
+						<div>
+							<h3 className="mb-2 text-xs font-medium text-muted-foreground">Chronologie de la journée</h3>
+							<ol className="space-y-1.5 border-l border-border pl-4">
+								{dayActions.map((action: DayAction, index: number) => (
+									<li key={`${action.time}-${index}`} className="relative flex items-center justify-between gap-3 text-sm">
+										<span className="absolute -left-[21px] size-2 rounded-full bg-primary" aria-hidden="true" />
+										<span>{action.label}</span>
+										<span className="tabular text-muted-foreground">{action.time}</span>
+									</li>
+								))}
+							</ol>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+
+			{/* Cette semaine : données réelles issues des pointages */}
+			<section aria-labelledby="week-title" className="space-y-3">
+				<h2 id="week-title" className="text-base font-semibold">Cette semaine</h2>
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1">
+					<StatCard label="Heures travaillées" value={`${weekStats.hours}h`} hint="Du lundi à aujourd'hui" />
+					<StatCard
+						label="Retards"
+						value={weekLates}
+						tone={weekLates > 0 ? "warning" : "neutral"}
+						toneLabel={weekLates > 0 ? "Retard" : undefined}
+						hint={weekLates > 0 ? "Pointages signalés en retard" : "Aucun retard cette semaine"}
+					/>
+					<StatCard label="Heures supplémentaires" value={`${weekOvertime}h`} hint="Au-delà de la durée prévue" />
 				</div>
+			</section>
+		</div>
 
-			</div>
+		<div className="grid gap-4 lg:grid-cols-3">
+			{/* Historique récent */}
+			<Card className="gap-3 py-4 shadow-none lg:col-span-2">
+				<CardHeader className="px-4 sm:px-6">
+					<div className="flex items-center justify-between gap-3">
+						<div>
+							<CardTitle className="text-base font-semibold">Pointages récents</CardTitle>
+							<CardDescription className="text-xs">Vos derniers jours pointés</CardDescription>
+						</div>
+						<Link href="/mes-pointages" prefetch={false} className="text-xs font-medium text-primary underline-offset-2 hover:underline">
+							Tout voir
+						</Link>
+					</div>
+				</CardHeader>
+				<CardContent className="px-0 sm:px-6">
+					{recentPointages.length === 0 ? (
+						<p className="px-4 py-8 text-center text-sm text-muted-foreground">
+							Aucun pointage sur les 14 derniers jours.
+						</p>
+					) : (
+						<>
+							<table className="hidden w-full text-sm sm:table">
+								<thead>
+									<tr className="text-left text-xs text-muted-foreground">
+										<th className="py-2 pr-3 font-medium">Jour</th>
+										<th className="py-2 pr-3 font-medium">Arrivée</th>
+										<th className="py-2 pr-3 font-medium">Départ</th>
+										<th className="py-2 pr-3 text-right font-medium">Durée</th>
+										<th className="py-2 text-right font-medium">Statut</th>
+									</tr>
+								</thead>
+								<tbody>
+									{recentPointages.map((p) => (
+										<tr key={p.id} className="h-11 border-t border-border">
+											<td className="pr-3 first-letter:uppercase">
+												{fmtDay(p.date)}
+												{(p.sessionNumber ?? 1) > 1 && <span className="ml-1 text-xs text-muted-foreground">· session {p.sessionNumber}</span>}
+											</td>
+											<td className="tabular pr-3">{p.entryTime ?? "—"}</td>
+											<td className="tabular pr-3">{p.exitTime ?? "—"}</td>
+											<td className="tabular pr-3 text-right">{fmtDuration(p.duration)}</td>
+											<td className="text-right"><StatusBadge status={p.status} /></td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+							<ul className="divide-y divide-border sm:hidden">
+								{recentPointages.map((p) => (
+									<li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3">
+										<div className="min-w-0">
+											<p className="text-sm font-medium first-letter:uppercase">{fmtDay(p.date)}</p>
+											<p className="tabular text-xs text-muted-foreground">
+												{p.entryTime ?? "—"} → {p.exitTime ?? "—"} · {fmtDuration(p.duration)}
+											</p>
+										</div>
+										<StatusBadge status={p.status} />
+									</li>
+								))}
+							</ul>
+						</>
+					)}
+				</CardContent>
+			</Card>
 
-			{dayActions.length > 0 && (
-
-				<div className="mt-4 space-y-2">
-
-				<p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-
-					Dernières actions
-
-				</p>
-
-				<ul className="space-y-1.5 text-xs">
-
-					{dayActions.slice(-4).map((action: DayAction, index: number) => (
-
-					<li
-
-						key={`${action.time}-${index}`}
-
-						className="flex items-center justify-between"
-
-					>
-
-						<span className="text-muted-foreground">{action.time}</span>
-
-						<span className="font-medium text-foreground">{action.label}</span>
-
-					</li>
-
-					))}
-
-				</ul>
-
-				</div>
-
-			)}
-
-			</CardContent>
-
-		</Card>
-
-
-
-		
-
+			{/* Congés et demandes */}
+			<Card className="gap-3 py-4 shadow-none">
+				<CardHeader className="px-4">
+					<div className="flex items-center justify-between gap-3">
+						<div>
+							<CardTitle className="text-base font-semibold">Congés et demandes</CardTitle>
+							<CardDescription className="text-xs">En attente ou à venir</CardDescription>
+						</div>
+						<Link href="/mes-conges" prefetch={false} className="text-xs font-medium text-primary underline-offset-2 hover:underline">
+							Gérer
+						</Link>
+					</div>
+				</CardHeader>
+				<CardContent className="px-4">
+					{leaveRequests.length === 0 ? (
+						<p className="py-6 text-center text-sm text-muted-foreground">
+							Aucune demande en cours.{" "}
+							<Link href="/mes-conges" prefetch={false} className="font-medium text-primary underline-offset-2 hover:underline">
+								Faire une demande
+							</Link>
+						</p>
+					) : (
+						<ul className="divide-y divide-border">
+							{leaveRequests.map((a) => (
+								<li key={a.id} className="space-y-1 py-3 first:pt-0 last:pb-0">
+									<div className="flex items-center justify-between gap-2">
+										<span className="text-sm font-medium">{LEAVE_TYPE[a.type] ?? a.type}</span>
+										<StatusBadge status={a.status as "pending" | "approved"} />
+									</div>
+									<p className="tabular text-xs text-muted-foreground">
+										{new Date(a.startDate as unknown as string).toLocaleDateString("fr-FR")} → {new Date(a.endDate as unknown as string).toLocaleDateString("fr-FR")}
+									</p>
+								</li>
+							))}
+						</ul>
+					)}
+				</CardContent>
+			</Card>
+		</div>
 	</div>
-
 	);
-
 }
-
