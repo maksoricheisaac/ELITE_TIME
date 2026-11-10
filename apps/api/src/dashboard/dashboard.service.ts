@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@elitetime/database';
-import { decryptUser } from '@elitetime/shared';
+import { decryptUser, decryptActivityLog } from '@elitetime/shared';
 import { decrypt } from '@elitetime/shared';
 
 // Extrait "YYYY-MM-DD" depuis les getters locaux du process Node.js.
@@ -62,6 +62,11 @@ export class DashboardService {
       count: deptCountMap.get(d.name) ?? 0,
     }));
 
+    const [today, recentActivity] = await Promise.all([
+      this.getTodayOverview(null),
+      this.getRecentActivity(),
+    ]);
+
     return {
       totalUsers: users.length,
       employees: users.filter((u) => u.role === 'employee').length,
@@ -69,6 +74,8 @@ export class DashboardService {
       admins: users.filter((u) => u.role === 'admin').length,
       activeToday: new Set(todayPointages.map((p) => p.userId)).size,
       departments: deptStats,
+      today,
+      recentActivity,
     };
   }
 
@@ -164,6 +171,8 @@ export class DashboardService {
       count: deptCountMap.get(d.name) ?? 0,
     }));
 
+    const today = await this.getTodayOverview(teamIds);
+
     return {
       totalUsers: teamMembers.length,
       employees: teamMembers.filter((u) => u.role === 'employee').length,
@@ -171,6 +180,7 @@ export class DashboardService {
       admins: teamMembers.filter((u) => u.role === 'admin').length,
       activeToday: new Set(todayPointages.map((p) => p.userId)).size,
       departments: deptStats,
+      today,
     };
   }
 
@@ -227,6 +237,118 @@ export class DashboardService {
           v.userIds.size > 0 ? Math.round((v.late / v.userIds.size) * 100) : 0,
       })),
     };
+  }
+
+  /**
+   * Indicateurs du jour, calculés sur données réelles (aucune valeur simulée).
+   * `userIds` = périmètre (équipe du manager) ; null = toute l'entreprise.
+   *  - workforce        : collaborateurs actifs pointants (employee + team_lead)
+   *  - presentToday     : collaborateurs ayant au moins un pointage aujourd'hui
+   *  - onLeaveToday     : collaborateurs en congé/absence approuvé aujourd'hui
+   *  - absentToday      : workforce - présents - en congé (null le week-end)
+   *  - lateToday        : collaborateurs en retard aujourd'hui
+   *  - incompleteCount  : pointages « incomplete » des 30 derniers jours
+   *  - pendingLeaves / pendingCorrections : demandes à traiter
+   * Les règles de calcul des retards/statuts ne sont pas modifiées : on lit les statuts stockés.
+   */
+  private async getTodayOverview(userIds: string[] | null) {
+    const scope = userIds ? { userId: { in: userIds } } : {};
+    const start = this.todayStart();
+    const end = this.todayEnd();
+    const since = new Date(start);
+    since.setDate(since.getDate() - 30);
+
+    const workforceWhere = {
+      status: 'active' as const,
+      role: { in: ['employee', 'team_lead'] as ('employee' | 'team_lead')[] },
+      ...(userIds ? { id: { in: userIds } } : {}),
+    };
+
+    const [
+      workforceUsers,
+      todayPointages,
+      incompleteCount,
+      leaves,
+      pendingLeaves,
+      pendingCorrections,
+    ] = await Promise.all([
+      this.prisma.user.findMany({
+        where: workforceWhere,
+        select: { id: true },
+      }),
+      this.prisma.pointage.findMany({
+        where: { ...scope, date: { gte: start, lte: end } },
+        select: { userId: true, status: true },
+      }),
+      this.prisma.pointage.count({
+        where: {
+          ...scope,
+          status: 'incomplete',
+          date: { gte: since, lt: start },
+        },
+      }),
+      this.prisma.absence.findMany({
+        where: {
+          ...scope,
+          status: 'approved',
+          startDate: { lte: end },
+          endDate: { gte: start },
+        },
+        select: { userId: true },
+      }),
+      this.prisma.absence.count({ where: { ...scope, status: 'pending' } }),
+      this.prisma.correctionRequest.count({
+        where: { ...scope, status: 'pending' },
+      }),
+    ]);
+
+    const workforce = new Set(workforceUsers.map((u) => u.id));
+    const present = new Set(
+      todayPointages.map((p) => p.userId).filter((id) => workforce.has(id)),
+    );
+    const late = new Set(
+      todayPointages
+        .filter((p) => p.status === 'late' && workforce.has(p.userId))
+        .map((p) => p.userId),
+    );
+    const onLeave = new Set(
+      leaves
+        .map((l) => l.userId)
+        .filter((id) => workforce.has(id) && !present.has(id)),
+    );
+    const dow = new Date().getDay();
+    const isWorkingDay = dow !== 0 && dow !== 6;
+
+    return {
+      isWorkingDay,
+      workforce: workforce.size,
+      presentToday: present.size,
+      onLeaveToday: onLeave.size,
+      absentToday: isWorkingDay
+        ? Math.max(0, workforce.size - present.size - onLeave.size)
+        : null,
+      lateToday: late.size,
+      incompleteCount,
+      pendingLeaves,
+      pendingCorrections,
+    };
+  }
+
+  private async getRecentActivity(limit = 8) {
+    const rows = await this.prisma.activityLog.findMany({
+      orderBy: { timestamp: 'desc' },
+      take: limit,
+    });
+    return rows.map((r) => {
+      const d = decryptActivityLog(r);
+      return {
+        id: d.id,
+        action: d.action,
+        details: d.details,
+        type: d.type,
+        timestamp: d.timestamp,
+      };
+    });
   }
 
   private todayStart() {

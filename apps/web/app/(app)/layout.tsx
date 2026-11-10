@@ -7,13 +7,20 @@ import { AiChatWidget } from "@/components/ai/AiChatWidget";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
+      <a href="#main-content" className="skip-link">
+        Aller au contenu
+      </a>
       <AdminSidebar />
       <SidebarInset>
         <DashboardHeader />
         <div className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden">
-          <div className="relative z-10 flex flex-1 flex-col gap-3 p-3 pt-2 sm:gap-4 sm:p-4 sm:pt-3">
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="relative z-10 mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 p-4 outline-none sm:gap-6 sm:p-6"
+          >
             {children}
-          </div>
+          </main>
           <LogoutOverlay />
         </div>
       </SidebarInset>

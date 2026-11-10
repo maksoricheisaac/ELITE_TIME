@@ -47,6 +47,13 @@ const hm = (mins) =>
   await db.connect();
   const hash = await bcrypt.hash('Demo#Elite2026', 10);
 
+  for (const [i, name] of ['Direction', 'Exploitation', 'Support', 'Comptabilité', 'RH', 'Informatique'].entries()) {
+    await db.query(
+      'insert into "Department"(id,name,"updatedAt") values($1,$2,now()) on conflict (name) do nothing',
+      [`dd_${i}`, name],
+    );
+  }
+
   const ids = ['demo_employee'];
   for (const [i, [u, first, last, dept, pos]] of PEOPLE.entries()) {
     const id = `demo_emp_${i + 1}`;

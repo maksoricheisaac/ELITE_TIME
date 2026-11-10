@@ -75,8 +75,8 @@ export const AdminSidebar = memo(() => {
   }, [refetch]);
 
   return (
-    <Sidebar collapsible="icon" className="bg-[var(--sidebar)] dark:bg-[var(--sidebar)] border-r border-white/10">
-      <SidebarHeader className="h-28 flex items-center justify-center">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
+      <SidebarHeader className="flex h-20 items-center justify-center border-b border-sidebar-border group-data-[collapsible=icon]:h-14">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
@@ -86,13 +86,14 @@ export const AdminSidebar = memo(() => {
                 onClick={handleNavigate}
                 className="flex items-center justify-center w-full h-full"
               >
-                <div className="flex items-center justify-center h-full transition-all duration-200 group-data-[collapsible=icon]:h-10">
+                <div className="flex h-full items-center justify-center rounded-md group-data-[collapsible=icon]:h-10 dark:bg-white/95 dark:px-2">
                   <Image
                     src={logo}
-                    alt="logo"
-                    width={120}
-                    height={120}
-                    className="object-contain transition-all duration-200 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8"
+                    alt="ELITE TIME — tableau de bord"
+                    width={96}
+                    height={96}
+                    priority
+                    className="h-16 w-16 object-contain group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
                   />
                 </div>
               </Link>
@@ -104,7 +105,7 @@ export const AdminSidebar = memo(() => {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-2 px-1">
+            <SidebarMenu className="gap-0.5 px-1">
               {currentMenu.length > 0 ? (
                 currentMenu.map((mi) => {
                   const Icon = mi.icon;
@@ -115,10 +116,10 @@ export const AdminSidebar = memo(() => {
                         asChild
                         isActive={isActive}
                         className={
-                          `rounded-lg transition-all duration-150 ease-out ` +
+                          `relative min-h-11 rounded-md text-sm transition-colors duration-150 md:min-h-9 ` +
                           (isActive
-                            ? 'bg-white/20 text-white shadow-sm'
-                            : 'text-white/70 hover:bg-white/10 hover:text-white')
+                            ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-sidebar-accent-foreground'
+                            : 'text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground')
                         }
                       >
                         <Link
@@ -126,17 +127,13 @@ export const AdminSidebar = memo(() => {
                           href={mi.to}
                           onClick={handleNavigate}
                           aria-current={isActive ? 'page' : undefined}
-                          className="flex w-full items-center gap-3 px-3 py-2.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0"
+                          className="flex w-full items-center gap-3 px-3 py-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0"
                         >
-                          {isActive && (
-                            <span className="h-1.5 w-1.5 rounded-full bg-white shrink-0 group-data-[collapsible=icon]:hidden" />
-                          )}
                           <Icon
-                            className={`h-4 w-4 shrink-0 transition-transform duration-150 group-data-[collapsible=icon]:mx-auto ${
-                              isActive ? 'text-white' : 'text-white/70'
-                            }`}
+                            className="h-4 w-4 shrink-0 group-data-[collapsible=icon]:mx-auto"
+                            aria-hidden="true"
                           />
-                          <span className="truncate group-data-[collapsible=icon]:hidden text-sm font-medium">
+                          <span className="truncate group-data-[collapsible=icon]:hidden text-sm">
                             {mi.label}
                           </span>
                         </Link>
@@ -145,7 +142,7 @@ export const AdminSidebar = memo(() => {
                   );
                 })
               ) : (
-                <div className="px-3 py-2 text-sm text-white/50">
+                <div className="px-3 py-2 text-sm text-muted-foreground">
                   {loading ? 'Chargement...' : 'Aucun menu disponible'}
                 </div>
               )}

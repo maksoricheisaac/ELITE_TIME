@@ -14,6 +14,7 @@ import { getEmployeeTodayBreaks } from "@/actions/employee/breaks";
 import EmployeeDashboardClient from "@/features/employee/dashboard";
 import ManagerDashboardClient from "@/features/manager/dashboard";
 import AdminDashboardClient from "@/features/admin/dashboard";
+import type { OperationalStats } from "@/features/dashboard/operational-dashboard";
 import { requireNavigationAccessById } from "@/lib/navigation-guard";
 import { getUserPermissions } from "@/lib/security/rbac";
 
@@ -37,14 +38,7 @@ export default async function AppDashboardPage() {
 
   // dashboard.view_team → vue manager (stats équipe)
   if (permSet.has('dashboard.view_team')) {
-    const stats = await serverGet<{
-      totalUsers: number;
-      employees: number;
-      managers: number;
-      admins: number;
-      activeToday: number;
-      departments: { name: string; count: number }[];
-    }>("/dashboard/manager/stats");
+    const stats = await serverGet<OperationalStats>("/dashboard/manager/stats");
     return <ManagerDashboardClient stats={stats} />;
   }
 

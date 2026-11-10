@@ -9,8 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import logo from '@public/logo/logo.png'
 import Image from 'next/image';
-import { Eye, EyeOff, Lock, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, User, ShieldCheck, Clock, CalendarCheck } from 'lucide-react';
 import { LoginSchema, type LoginData } from '@/schemas/auth/login';
+
+const HIGHLIGHTS = [
+  { icon: Clock, text: 'Pointages, pauses et sessions multiples en temps réel' },
+  { icon: CalendarCheck, text: 'Congés, absences et corrections avec circuit de validation' },
+  { icon: ShieldCheck, text: 'Accès par rôles et permissions, données personnelles chiffrées' },
+];
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -43,25 +49,45 @@ export default function LoginPage() {
   const isSubmitting = form.formState.isSubmitting;
 
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-slate-900 via-[#0b2a45] to-slate-900 flex items-center justify-center px-4 py-6 sm:py-8">
-      {/* Orbes d'ambiance */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-40 top-1/4 h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute right-[-80px] bottom-1/4 h-96 w-96 rounded-full bg-primary/15 blur-3xl" />
-      </div>
-
-      <div className="relative z-10 w-full max-w-sm">
-        {/* Logo & titre */}
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shadow-xl mb-3 sm:h-16 sm:w-16 sm:mb-4">
-            <Image src={logo} alt="Elite Time" width={48} height={48} className="h-10 w-10 sm:h-12 sm:w-12" />
-          </div>
-          <h1 className="text-xl font-bold text-white tracking-tight sm:text-2xl">Elite Time</h1>
-          <p className="text-xs text-white/50 mt-1 sm:text-sm">Gestion des temps & présences</p>
+    <div className="grid min-h-dvh bg-background lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      {/* Panneau de marque (desktop) : aplat navy, aucun effet décoratif */}
+      <aside className="hidden flex-col justify-between bg-brand-900 p-12 text-white lg:flex">
+        <div className="inline-flex w-fit rounded-xl bg-white p-3">
+          <Image src={logo} alt="ELITE TIME" width={72} height={72} priority className="h-[72px] w-[72px] object-contain" />
         </div>
+        <div className="max-w-md space-y-8">
+          <div className="space-y-3">
+            <h2 className="text-3xl font-semibold leading-tight tracking-tight">
+              Le temps de travail, simplement maîtrisé.
+            </h2>
+            <p className="text-base text-white/75">
+              Présences, congés et rapports d&apos;ELITE NETWORK dans un seul espace fiable.
+            </p>
+          </div>
+          <ul className="space-y-4">
+            {HIGHLIGHTS.map(({ icon: Icon, text }) => (
+              <li key={text} className="flex items-start gap-3 text-sm text-white/85">
+                <Icon className="mt-0.5 size-4 shrink-0 text-brand-500" aria-hidden="true" />
+                {text}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="text-xs text-white/55">© ELITE NETWORK — Usage interne</p>
+      </aside>
 
-        {/* Card de connexion */}
-        <div className="bg-white/8 backdrop-blur-xl border border-white/15 rounded-2xl p-6 shadow-2xl sm:p-8">
+      <main className="flex items-center justify-center px-4 py-8 sm:px-8">
+        <div className="w-full max-w-sm">
+          <div className="mb-8 flex flex-col items-center gap-3 text-center lg:items-start lg:text-left">
+            <Image src={logo} alt="ELITE TIME" width={64} height={64} priority className="h-16 w-16 object-contain lg:hidden" />
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">Connexion</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Accédez à votre espace ELITE TIME avec vos identifiants professionnels.
+              </p>
+            </div>
+          </div>
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5" noValidate>
               <FormField
@@ -69,20 +95,20 @@ export default function LoginPage() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white/80 text-sm font-medium">Nom d&apos;utilisateur</FormLabel>
+                    <FormLabel className="text-sm font-medium">Nom d&apos;utilisateur</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                        <User className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                         <Input
                           type="text"
-                          placeholder="Votre identifiant"
+                          placeholder="prenom.nom"
                           autoComplete="username"
-                          className="pl-9 bg-white/10 border-white/20 text-white placeholder:text-white/30 focus-visible:border-primary/70 focus-visible:ring-primary/30"
+                          className="h-11 pl-9 text-base md:h-10 md:text-sm"
                           {...field}
                         />
                       </div>
                     </FormControl>
-                    <FormMessage className="text-red-400" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -94,10 +120,10 @@ export default function LoginPage() {
                   const { name, value, onChange, onBlur, ref } = field;
                   return (
                     <FormItem>
-                      <FormLabel className="text-white/80 text-sm font-medium">Mot de passe</FormLabel>
+                      <FormLabel className="text-sm font-medium">Mot de passe</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                          <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                           <Input
                             ref={ref}
                             name={name}
@@ -107,53 +133,50 @@ export default function LoginPage() {
                             type={showPassword ? 'text' : 'password'}
                             placeholder="••••••••"
                             autoComplete="current-password"
-                            className="pl-9 pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/30 focus-visible:border-primary/70 focus-visible:ring-primary/30"
+                            className="h-11 pl-9 pr-11 text-base md:h-10 md:text-sm"
                             onKeyDown={handlePasswordKey}
                             onKeyUp={handlePasswordKey}
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword((p) => !p)}
-                            className="absolute inset-y-0 right-3 flex items-center text-white/40 hover:text-white/70 transition-colors cursor-pointer"
-                            aria-label={showPassword ? 'Masquer' : 'Afficher'}
+                            className="absolute inset-y-0 right-0 flex w-11 cursor-pointer items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:text-foreground"
+                            aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                            aria-pressed={showPassword}
                           >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                           </button>
                         </div>
                       </FormControl>
                       {isCapsLockOn && (
-                        <p className="text-xs text-amber-400 flex items-center gap-1">
-                          ⚠ Verrou majuscules activé
+                        <p role="status" className="flex items-center gap-1 text-xs font-medium text-warning">
+                          Verrou majuscules activé
                         </p>
                       )}
-                      <FormMessage className="text-red-400" />
+                      <FormMessage />
                     </FormItem>
                   );
                 }}
               />
 
-              <p className="text-xs text-white/35 text-center">
-                Identifiants fournis par votre administrateur
-              </p>
-
-              <Button
-                type="submit"
-                className="w-full h-10 bg-primary hover:bg-primary/90 text-white font-semibold shadow-lg shadow-primary/30 transition-all"
-                disabled={isSubmitting}
-              >
+              <Button type="submit" className="h-11 w-full font-medium md:h-10" disabled={isSubmitting}>
                 {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span className="flex items-center gap-2" role="status">
+                    <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" />
                     Connexion…
                   </span>
                 ) : (
-                  "Se connecter"
+                  'Se connecter'
                 )}
               </Button>
+
+              <p className="text-center text-xs text-muted-foreground">
+                Identifiants fournis par votre administrateur
+              </p>
             </form>
           </Form>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

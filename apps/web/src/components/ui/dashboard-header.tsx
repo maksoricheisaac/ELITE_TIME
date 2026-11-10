@@ -1,95 +1,121 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import { Fragment, memo, useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { ChevronRight } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ModeToggle } from "./toggle-mode";
 import { UserNav } from "../customs/user-nav";
 import { LateAlertsPanel } from "@/components/ui/late-alerts-panel";
 
-const PAGE_LABELS: Record<string, string> = {
+export const PAGE_LABELS: Record<string, string> = {
   dashboard: "Tableau de bord",
   employees: "Employés",
   pointages: "Pointages",
   "mes-pointages": "Mes pointages",
+  "mon-rapport": "Mon rapport",
   conges: "Congés",
+  "mes-conges": "Mes congés",
   departements: "Départements",
   postes: "Postes",
   reports: "Rapports",
-  logs: "Logs & activité",
+  logs: "Journal d'activité",
   permissions: "Permissions",
+  "permissions-guide": "Guide des permissions",
+  emails: "E-mails planifiés",
   settings: "Paramètres",
   profile: "Mon profil",
   manager: "Manager",
   manual: "Saisie manuelle",
 };
 
-interface DashboardHeaderProps {
-  searchQuery?: string;
-  onSearchChange?: (value: string) => void;
-  onRefresh?: () => void;
-  onExport?: () => void;
-  isRefreshing?: boolean;
-}
+const labelFor = (segment: string) =>
+  PAGE_LABELS[segment] ??
+  segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
 
-export const DashboardHeader = memo(({}: DashboardHeaderProps) => {
+// Segments dynamiques (identifiants) : non affichés tels quels dans le fil d'Ariane
+const isDynamicSegment = (s: string) => /^[a-z0-9_-]{20,}$/i.test(s) || /^c[a-z0-9]{24}$/.test(s);
+
+export const DashboardHeader = memo(() => {
   const pathname = usePathname();
   const [currentTime, setCurrentTime] = useState<string>("");
 
-  const segments = pathname.split("/").filter(Boolean);
-  const lastSegment = segments[segments.length - 1] ?? "dashboard";
-  const pageLabel =
-    PAGE_LABELS[lastSegment] ??
-    lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1).replace(/-/g, " ");
+  const crumbs = pathname
+    .split("/")
+    .filter(Boolean)
+    .reduce<{ href: string; label: string }[]>((acc, seg) => {
+      const href = `${acc.length ? acc[acc.length - 1].href : ""}/${seg}`;
+      acc.push({ href, label: isDynamicSegment(seg) ? "Détail" : labelFor(seg) });
+      return acc;
+    }, []);
+  const trail = crumbs.length ? crumbs : [{ href: "/dashboard", label: PAGE_LABELS.dashboard }];
 
   useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
+    const updateTime = () =>
       setCurrentTime(
-        now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+        new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
       );
-    };
     updateTime();
     const id = window.setInterval(updateTime, 30_000);
     return () => window.clearInterval(id);
   }, []);
 
   return (
-    <header className="bg-[var(--sidebar)] text-white sticky top-0 z-50 flex h-12 w-full shrink-0 items-center gap-2 border-b border-white/10 shadow-sm transition-[width,height] ease-linear sm:h-14 group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-      {/* Left: trigger + page title */}
+    <header className="sticky top-0 z-40 flex h-14 w-full shrink-0 items-center gap-2 border-b border-border bg-card">
       <div className="flex min-w-0 flex-1 items-center gap-2 px-3 sm:gap-3 sm:px-4">
-        <SidebarTrigger className="-ml-1 shrink-0 text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors" />
-        <Separator orientation="vertical" className="h-4 shrink-0 bg-white/20" />
-        <motion.span
-          key={pageLabel}
-          initial={{ opacity: 0, x: -6 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.2 }}
-          className="truncate text-xs font-semibold text-white tracking-tight sm:text-sm"
-        >
-          {pageLabel}
-        </motion.span>
+        <SidebarTrigger
+          aria-label="Ouvrir ou fermer le menu"
+          className="-ml-1 size-9 shrink-0 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        />
+        <Separator orientation="vertical" className="h-4 shrink-0" />
+        <nav aria-label="Fil d'Ariane" className="min-w-0">
+          <ol className="flex min-w-0 items-center gap-1 text-sm">
+            {trail.map((c, i) => {
+              const last = i === trail.length - 1;
+              return (
+                <Fragment key={c.href}>
+                  {i > 0 && (
+                    <ChevronRight
+                      className="hidden size-3.5 shrink-0 text-muted-foreground sm:block"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <li
+                    className={
+                      last
+                        ? "min-w-0 truncate font-semibold text-foreground"
+                        : "hidden text-muted-foreground sm:block"
+                    }
+                  >
+                    {last ? (
+                      <span aria-current="page">{c.label}</span>
+                    ) : (
+                      <Link href={c.href} prefetch={false} className="hover:text-foreground">
+                        {c.label}
+                      </Link>
+                    )}
+                  </li>
+                </Fragment>
+              );
+            })}
+          </ol>
+        </nav>
       </div>
 
-      {/* Right: time + alerts + user */}
       <div className="flex shrink-0 items-center gap-2 px-3 sm:gap-3 sm:px-4">
         {currentTime && (
-          <div className="hidden sm:flex flex-col items-end">
-            <span className="text-sm font-semibold leading-none text-white">{currentTime}</span>
-            <span className="text-[10px] uppercase tracking-wide text-white/60">Heure locale</span>
+          <div className="hidden flex-col items-end sm:flex">
+            <span className="tabular text-sm font-semibold leading-none">{currentTime}</span>
+            <span className="text-[11px] text-muted-foreground">Heure locale</span>
           </div>
         )}
         <LateAlertsPanel />
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-1"
-        >
+        <div className="flex items-center gap-1">
           <UserNav />
           <ModeToggle />
-        </motion.div>
+        </div>
       </div>
     </header>
   );

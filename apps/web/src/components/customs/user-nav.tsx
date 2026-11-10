@@ -18,10 +18,10 @@ export const UserNav = () => {
   if (isLoading) {
     return (
       <div className="flex items-center gap-2 px-2">
-        <div className="h-8 w-8 rounded-full bg-white/20 animate-pulse" />
+        <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
         <div className="hidden md:flex flex-col gap-1.5">
-          <div className="h-2.5 w-20 bg-white/20 animate-pulse rounded-sm" />
-          <div className="h-2 w-12 bg-white/20 animate-pulse rounded-sm" />
+          <div className="h-2.5 w-20 bg-muted animate-pulse rounded-sm" />
+          <div className="h-2 w-12 bg-muted animate-pulse rounded-sm" />
         </div>
       </div>
     );
@@ -35,18 +35,18 @@ export const UserNav = () => {
       <DropdownMenuTrigger asChild suppressHydrationWarning>
         <Button
           variant="ghost"
-          className="relative h-9 rounded-full px-2 hover:bg-white/15 text-white transition-all gap-2"
+          className="relative h-9 rounded-full px-2 hover:bg-accent text-foreground transition-colors gap-2"
         >
           <Avatar className="h-7 w-7 ring-2 ring-white/30">
-            <AvatarFallback className="bg-white/20 text-white text-xs font-semibold">
+            <AvatarFallback className="bg-brand-100 text-brand-700 dark:bg-accent dark:text-accent-foreground text-xs font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>
           <div className="hidden md:flex flex-col items-start">
-            <p className="text-xs font-semibold leading-none text-white">{user?.firstname}</p>
-            <p className="text-[10px] text-white/60 capitalize leading-none mt-0.5">{roleLabel}</p>
+            <p className="text-xs font-semibold leading-none text-foreground">{user?.firstname}</p>
+            <p className="text-[11px] text-muted-foreground capitalize leading-none mt-0.5">{roleLabel}</p>
           </div>
-          <ChevronDown className="h-3 w-3 text-white/60 hidden md:block" />
+          <ChevronDown className="h-3 w-3 text-muted-foreground hidden md:block" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">

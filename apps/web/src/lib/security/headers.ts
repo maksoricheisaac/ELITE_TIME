@@ -4,10 +4,11 @@ import type { NextRequest } from 'next/server'
 export const securityHeaders = {
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    // 'unsafe-eval' uniquement hors production (React dev reconstruit les piles d'appels)
+    `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"}`,
     "worker-src 'self'",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self' data:",
     "img-src 'self' data: blob: http: https:",
     "connect-src 'self' http: https: ws: wss:",
     "frame-ancestors 'none'",

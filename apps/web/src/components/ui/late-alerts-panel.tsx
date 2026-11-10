@@ -58,12 +58,12 @@ export function LateAlertsPanel() {
           type="button"
           variant="ghost"
           size="icon"
-          className={`relative h-9 w-9 cursor-pointer rounded-full border border-white/10 bg-white/5 text-white shadow-sm hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-0 ${
+          className={`relative h-9 w-9 cursor-pointer rounded-full border border-border bg-card text-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 ${
             totalCount > 0 ? "ring-2 ring-destructive/70" : ""
           }`}
           aria-label="Notifications de retard"
         >
-          <Bell className="h-4 w-4 text-white" />
+          <Bell className="h-4 w-4" aria-hidden="true" />
           {totalCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
               {totalCount}

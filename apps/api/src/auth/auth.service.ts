@@ -214,8 +214,8 @@ export class AuthService {
         userId: user.id,
         action: 'Connexion Locale',
         details:
-          `${user.firstname || ''} ${user.lastname || ''}`.trim() ||
-          user.username,
+          `${decryptUser(user).firstname || ''} ${decryptUser(user).lastname || ''}`.trim() ||
+          decryptUser(user).username,
         timestamp: new Date(),
         type: 'auth',
       },

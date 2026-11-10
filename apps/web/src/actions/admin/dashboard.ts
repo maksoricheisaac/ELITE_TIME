@@ -10,6 +10,18 @@ export interface AdminDashboardStats {
   admins: number;
   activeToday: number;
   departments: DepartmentStat[];
+  today?: {
+    isWorkingDay: boolean;
+    workforce: number;
+    presentToday: number;
+    onLeaveToday: number;
+    absentToday: number | null;
+    lateToday: number;
+    incompleteCount: number;
+    pendingLeaves: number;
+    pendingCorrections: number;
+  };
+  recentActivity?: { id: string; action: string; details: string; type: string; timestamp: string }[];
 }
 
 export interface DashboardChartData {

@@ -40,17 +40,23 @@ interface PointageReminderPayload {
  * En production, NEXT_ALLOWED_ORIGINS doit contenir uniquement le vhost IIS
  * (http://elitetime.elitenetwork.local) — jamais l'IP brute ni le port :4000.
  */
+const configuredOrigins = (process.env.NEXT_ALLOWED_ORIGINS ?? '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+// La configuration explicite (NEXT_ALLOWED_ORIGINS) prime toujours ; les origines
+// locales par défaut ne servent qu'en développement lorsqu'elle est absente.
 const allowedOrigins =
-  process.env.NODE_ENV === 'development'
-    ? [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://127.0.0.1:3000',
-      ]
-    : (process.env.NEXT_ALLOWED_ORIGINS ?? 'http://localhost:3000')
-        .split(',')
-        .map((o) => o.trim())
-        .filter(Boolean);
+  configuredOrigins.length > 0
+    ? configuredOrigins
+    : process.env.NODE_ENV === 'development'
+      ? [
+          'http://localhost:3000',
+          'http://localhost:3001',
+          'http://127.0.0.1:3000',
+        ]
+      : ['http://localhost:3000'];
 
 @WebSocketGateway({
   cors: {
