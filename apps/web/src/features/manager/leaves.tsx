@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataTable } from "@/components/ui/data-table";
+import { LeaveRowActions } from "@/features/manager/leave-row-actions";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useNotification } from "@/contexts/notification-context";
 import { useUserPermissions } from "@/hooks/use-user-permissions";
@@ -31,17 +32,6 @@ import {
 } from "@/components/ui/sheet";
 import { CalendarRange, CheckCircle2, AlertCircle, Building2, XCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 const TYPE_LABELS: Record<AbsenceType, string> = {
   conge: "Congé payé",
@@ -337,98 +327,15 @@ export default function LeaveManagementClient({ team, absences, currentUserRole 
         };
 
         return (
-          <div className="flex justify-end gap-2">
-            {isPendingStatus && has("absences.reject") && (
-              <Button
-                className="cursor-pointer"
-                variant="outline"
-                size="sm"
-                onClick={handleReject}
-                disabled={isPending}
-              >
-                Rejeter
-              </Button>
-            )}
-            {isPendingStatus && has("absences.approve") && (
-              <Button
-                className="cursor-pointer"
-                size="sm"
-                onClick={handleApprove}
-                disabled={isPending}
-              >
-                Approuver
-              </Button>
-            )}
-            {canActOnNonPending && has("absences.edit_managed") && (
-              <Button
-                className="cursor-pointer"
-                variant="outline"
-                size="sm"
-                onClick={handleEdit}
-                disabled={isPending}
-              >
-                Modifier
-              </Button>
-            )}
-            {canActOnNonPending && has("absences.delete_managed") && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    className="cursor-pointer"
-                    variant="destructive"
-                    size="sm"
-                    disabled={isPending}
-                  >
-                    Annuler
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Annuler ce congé ?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Ce congé sera marqué comme annulé et ne sera plus pris en compte dans les pointages et les
-                      rapports. Cette action peut être tracée dans l&apos;historique.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Retour</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} disabled={isPending}>
-                      Annuler le congé
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-            {has("absences.delete_managed") && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    className="cursor-pointer"
-                    variant="outline"
-                    size="sm"
-                    disabled={isPending}
-                  >
-                    Supprimer
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Supprimer ce congé de la liste ?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Cette ligne ne sera plus affichée dans la liste des congés. La donnée est conservée en base
-                      de données et reste consultable si nécessaire.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Retour</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleHide} disabled={isPending}>
-                      Supprimer
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
+          <LeaveRowActions
+            employeeName={`${a.user.firstname ?? ""} ${a.user.lastname ?? ""}`.trim() || "ce collaborateur"}
+            disabled={isPending}
+            onApprove={isPendingStatus && has("absences.approve") ? handleApprove : undefined}
+            onReject={isPendingStatus && has("absences.reject") ? handleReject : undefined}
+            onEdit={canActOnNonPending && has("absences.edit_managed") ? handleEdit : undefined}
+            onCancel={canActOnNonPending && has("absences.delete_managed") ? handleDelete : undefined}
+            onHide={has("absences.delete_managed") ? handleHide : undefined}
+          />
         );
       },
     },
