@@ -1,0 +1,132 @@
+/*
+ * ELITE TIME — Motion & matériaux (design-system/MASTER.md §9 + passe « Apple Design »)
+ *
+ * Principes appliqués :
+ *  - la réponse est immédiate (retour à l'appui), les transitions de contenu restent courtes ;
+ *  - les chemins d'entrée et de sortie sont symétriques (un tiroir sort par là où il est entré) ;
+ *  - seules `opacity`, `translate`, `scale` sont animées (compositeur) ;
+ *  - prefers-reduced-motion : fondu seul, sans déplacement ni rebond ;
+ *  - prefers-reduced-transparency / prefers-contrast : surfaces pleines, sans flou.
+ */
+
+:root {
+  /* Courbe « feuille/tiroir » (décélération douce, sans rebond) et courbe d'apparition d'un contenu */
+  --ease-apple: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --scrim: rgb(8 18 33 / 0.38);
+}
+
+/* ── Keyframes (propriétés individuelles `translate` / `scale`, indépendantes de `transform`) ── */
+@keyframes ui-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ui-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes ui-dialog-in { from { opacity: 0; scale: 0.96; } to { opacity: 1; scale: 1; } }
+@keyframes ui-dialog-out { from { opacity: 1; scale: 1; } to { opacity: 0; scale: 0.98; } }
+@keyframes ui-slide-up-in { from { translate: 0 100%; } to { translate: 0 0; } }
+@keyframes ui-slide-down-out { from { translate: 0 0; } to { translate: 0 100%; } }
+@keyframes ui-slide-left-in { from { translate: -100% 0; } to { translate: 0 0; } }
+@keyframes ui-slide-left-out { from { translate: 0 0; } to { translate: -100% 0; } }
+@keyframes ui-slide-right-in { from { translate: 100% 0; } to { translate: 0 0; } }
+@keyframes ui-slide-right-out { from { translate: 0 0; } to { translate: 100% 0; } }
+@keyframes ui-slide-top-in { from { translate: 0 -100%; } to { translate: 0 0; } }
+@keyframes ui-slide-top-out { from { translate: 0 0; } to { translate: 0 -100%; } }
+@keyframes ui-page-in { from { opacity: 0; translate: 0 4px; } to { opacity: 1; translate: 0 0; } }
+
+/* ── Voile (scrim) : atténue subtilement l'arrière-plan et le floute légèrement ── */
+[data-slot="dialog-overlay"],
+[data-slot="alert-dialog-overlay"],
+[data-slot="sheet-overlay"] {
+  background: var(--scrim);
+  -webkit-backdrop-filter: blur(1.5px);
+  backdrop-filter: blur(1.5px);
+}
+[data-slot="dialog-overlay"][data-state="open"],
+[data-slot="alert-dialog-overlay"][data-state="open"],
+[data-slot="sheet-overlay"][data-state="open"] {
+  animation: ui-fade-in 200ms ease-out both;
+}
+[data-slot="dialog-overlay"][data-state="closed"],
+[data-slot="alert-dialog-overlay"][data-state="closed"],
+[data-slot="sheet-overlay"][data-state="closed"] {
+  animation: ui-fade-out 150ms ease-in both;
+}
+
+/* ── Dialogues centrés : apparition par fondu + très légère mise à l'échelle ── */
+[data-slot="dialog-content"][data-state="open"],
+[data-slot="alert-dialog-content"][data-state="open"] {
+  animation: ui-dialog-in 220ms var(--ease-out-soft) both;
+}
+[data-slot="dialog-content"][data-state="closed"],
+[data-slot="alert-dialog-content"][data-state="closed"] {
+  animation: ui-dialog-out 140ms ease-in both;
+}
+
+/* ── Mobile : les dialogues deviennent des feuilles basses (entrée et sortie par le bas) ── */
+@media (max-width: 639.98px) {
+  [data-slot="dialog-content"][data-state="open"] {
+    animation: ui-slide-up-in 320ms var(--ease-apple) both;
+  }
+  [data-slot="dialog-content"][data-state="closed"] {
+    animation: ui-slide-down-out 240ms var(--ease-apple) both;
+  }
+}
+
+/* ── Feuilles latérales (menu mobile, panneaux) : chemin symétrique, plus rapide que 500 ms ── */
+[data-sheet][data-state="open"][data-side="left"] { animation: ui-slide-left-in 300ms var(--ease-apple) both; }
+[data-sheet][data-state="closed"][data-side="left"] { animation: ui-slide-left-out 220ms var(--ease-apple) both; }
+[data-sheet][data-state="open"][data-side="right"] { animation: ui-slide-right-in 300ms var(--ease-apple) both; }
+[data-sheet][data-state="closed"][data-side="right"] { animation: ui-slide-right-out 220ms var(--ease-apple) both; }
+[data-sheet][data-state="open"][data-side="top"] { animation: ui-slide-top-in 300ms var(--ease-apple) both; }
+[data-sheet][data-state="closed"][data-side="top"] { animation: ui-slide-top-out 220ms var(--ease-apple) both; }
+[data-sheet][data-state="open"][data-side="bottom"] { animation: ui-slide-up-in 320ms var(--ease-apple) both; }
+[data-sheet][data-state="closed"][data-side="bottom"] { animation: ui-slide-down-out 240ms var(--ease-apple) both; }
+
+/* ── Changement de page : fondu court (pas de `both` : aucune propriété résiduelle après l'animation,
+      un `translate` persistant créerait un bloc conteneur pour les éléments `position: fixed`) ── */
+.page-enter {
+  animation: ui-page-in 180ms var(--ease-out-soft) backwards;
+}
+
+/* ── Matériau « chrome » : en-têtes et barres flottantes (jamais pour tableaux/formulaires) ── */
+.material-chrome {
+  background: color-mix(in srgb, var(--card) 82%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .material-chrome { background: var(--card); }
+}
+
+/* ── Sidebar : transitions de largeur plus naturelles que `linear` ── */
+[data-slot="sidebar-gap"],
+[data-slot="sidebar-container"] {
+  transition-timing-function: var(--ease-apple) !important;
+  transition-duration: 240ms !important;
+}
+
+/* ── Préférences système ── */
+@media (prefers-reduced-motion: reduce) {
+  /* remplace tout déplacement par un fondu discret, sans rebond ni mise à l'échelle */
+  [data-slot="dialog-content"][data-state="open"],
+  [data-slot="alert-dialog-content"][data-state="open"],
+  [data-sheet][data-state="open"] { animation: ui-fade-in 150ms ease-out both !important; }
+  [data-slot="dialog-content"][data-state="closed"],
+  [data-slot="alert-dialog-content"][data-state="closed"],
+  [data-sheet][data-state="closed"] { animation: ui-fade-out 120ms ease-in both !important; }
+  .page-enter { animation: ui-fade-in 120ms ease-out backwards; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root { --scrim: rgb(8 18 33 / 0.62); }
+  [data-slot="dialog-overlay"],
+  [data-slot="alert-dialog-overlay"],
+  [data-slot="sheet-overlay"] { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .material-chrome { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+@media (prefers-contrast: more) {
+  :root { --scrim: rgb(0 0 0 / 0.7); }
+  [data-slot="dialog-overlay"],
+  [data-slot="alert-dialog-overlay"],
+  [data-slot="sheet-overlay"] { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .material-chrome { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom-color: var(--foreground) !important; }
+}

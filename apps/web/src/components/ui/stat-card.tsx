@@ -42,13 +42,13 @@ export function StatCard({
     <div
       className={cn(
         "flex h-full flex-col rounded-xl border border-border bg-card p-4",
-        href && "transition-colors hover:border-brand-500/60",
+        href && "transition-[border-color,scale] duration-150 hover:border-brand-500/60 active:scale-[0.99] motion-reduce:active:scale-100",
         className,
       )}
     >
       <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
       <div className="mt-2 flex items-end justify-between gap-2">
-        <p className="tabular text-2xl font-semibold leading-none text-foreground sm:text-[28px]">
+        <p className="tabular text-2xl font-semibold leading-none tracking-[-0.02em] text-foreground sm:text-[28px]">
           {value}
         </p>
         {toneLabel && (

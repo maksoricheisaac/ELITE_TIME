@@ -127,15 +127,8 @@ export default function LoginPage() {
                 }}
               />
 
-              <Button type="submit" className="h-11 w-full font-medium md:h-10" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <span className="flex items-center gap-2" role="status">
-                    <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" />
-                    Connexion…
-                  </span>
-                ) : (
-                  'Se connecter'
-                )}
+              <Button type="submit" size="lg" loading={isSubmitting} className="w-full font-medium">
+                {isSubmitting ? 'Connexion…' : 'Se connecter'}
               </Button>
 
               <p className="text-center text-xs text-muted-foreground">

@@ -3,6 +3,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useDragDismiss } from "@/hooks/use-drag-dismiss"
 
 function Dialog({
   ...props
@@ -32,18 +33,22 @@ function DialogOverlay({
   className,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+  // Voile + animations : voir app/motion.css (data-slot="dialog-overlay")
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
-      className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
-        className
-      )}
+      className={cn("fixed inset-0 z-50", className)}
       {...props}
     />
   )
 }
 
+/**
+ * Dialogue.
+ *  - Desktop : centré, apparition par fondu + légère mise à l'échelle (motion.css).
+ *  - Mobile (< 640 px) : feuille basse. Elle entre et sort par le bas ; la poignée permet de la
+ *    glisser vers le bas pour la fermer (suivi 1:1, projection d'élan, ressort critique).
+ */
 function DialogContent({
   className,
   children,
@@ -52,25 +57,50 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const contentRef = React.useRef<HTMLDivElement | null>(null)
+  const closeRef = React.useRef<HTMLButtonElement | null>(null)
+  const { handlers, reset } = useDragDismiss({
+    targetRef: contentRef,
+    axis: "y",
+    direction: 1,
+    mode: "handle",
+    onDismiss: () => closeRef.current?.click(),
+  })
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        ref={(node) => {
+          contentRef.current = node
+          if (node) reset() // repart de la position de repos à chaque ouverture
+        }}
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg max-h-[90dvh] overflow-y-auto",
+          "bg-background fixed top-[50%] left-[50%] z-50 grid max-h-[90dvh] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto rounded-lg border p-6 shadow-[var(--shadow-popover)] sm:max-w-lg",
+          // feuille basse sur mobile
+          "max-sm:top-auto max-sm:bottom-0 max-sm:left-0 max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:border-x-0 max-sm:border-b-0 max-sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]",
           className
         )}
         {...props}
       >
+        {/* Poignée de la feuille basse (mobile) : zone tactile de 28 px, gestes capturés ici seulement */}
+        <div
+          {...handlers}
+          aria-hidden="true"
+          className="-mx-6 -mt-4 flex h-7 cursor-grab touch-none items-center justify-center active:cursor-grabbing sm:hidden"
+        >
+          <span className="bg-border h-1 w-9 rounded-full" />
+        </div>
         {children}
+        <DialogPrimitive.Close ref={closeRef} tabIndex={-1} aria-hidden="true" className="sr-only" />
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 flex size-8 items-center justify-center rounded-md opacity-70 transition-[opacity,background-color,scale] duration-150 hover:bg-accent hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden active:scale-90 disabled:pointer-events-none max-md:size-11 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
           >
             <XIcon />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">Fermer</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>

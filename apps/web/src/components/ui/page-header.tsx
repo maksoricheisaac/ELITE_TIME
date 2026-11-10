@@ -22,7 +22,7 @@ export function PageHeader({ title, description, badge, className, actions, chil
         {badge && (
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{badge}</p>
         )}
-        <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{title}</h1>
+        <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">{title}</h1>
         {description && (
           <p className="text-sm text-muted-foreground">{description}</p>
         )}

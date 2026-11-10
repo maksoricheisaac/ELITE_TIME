@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { MotionProvider } from "@/components/motion-provider";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { AuthProvider } from "@/contexts/auth-context";
 import { NotificationProvider } from "@/contexts/notification-context";
@@ -81,6 +82,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <MotionProvider>
           <NotificationProvider>
             <AuthProvider>
               <RealtimeProvider>
@@ -89,6 +91,7 @@ export default function RootLayout({
               </RealtimeProvider>
             </AuthProvider>
           </NotificationProvider>
+          </MotionProvider>
         </ThemeProvider>
         <ServiceWorkerRegister />
         <InstallPrompt />

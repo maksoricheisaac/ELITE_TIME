@@ -41,6 +41,7 @@ const isDynamicSegment = (s: string) => /^[a-z0-9_-]{20,}$/i.test(s) || /^c[a-z0
 export const DashboardHeader = memo(() => {
   const pathname = usePathname();
   const [currentTime, setCurrentTime] = useState<string>("");
+  const [scrolled, setScrolled] = useState(false);
 
   const crumbs = pathname
     .split("/")
@@ -51,6 +52,14 @@ export const DashboardHeader = memo(() => {
       return acc;
     }, []);
   const trail = crumbs.length ? crumbs : [{ href: "/dashboard", label: PAGE_LABELS.dashboard }];
+
+  // Bordure basse seulement quand le contenu défile sous l'en-tête (pas de trait dur permanent)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 2);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     const updateTime = () =>
@@ -63,7 +72,10 @@ export const DashboardHeader = memo(() => {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 w-full shrink-0 items-center gap-2 border-b border-border bg-card">
+    <header
+      data-scrolled={scrolled}
+      className="material-chrome sticky top-0 z-40 flex h-14 w-full shrink-0 items-center gap-2 border-b border-transparent transition-[border-color] duration-200 data-[scrolled=true]:border-border"
+    >
       <div className="flex min-w-0 flex-1 items-center gap-2 px-3 sm:gap-3 sm:px-4">
         <SidebarTrigger
           aria-label="Ouvrir ou fermer le menu"

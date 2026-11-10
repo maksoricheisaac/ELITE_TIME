@@ -1,6 +1,7 @@
-@import "@fontsource-variable/inter/index.css";
+@import "@fontsource-variable/inter/opsz.css";
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./motion.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -274,6 +275,28 @@ body {
   /* Chiffres alignés (heures, compteurs, tableaux) */
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Typographie (Apple : optical sizing, césure équilibrée des titres) */
+  html {
+    font-optical-sizing: auto;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  /* Interlettrage dépendant de la taille : serré en grand, légèrement ouvert en petit */
+  h1 {
+    letter-spacing: -0.022em;
+  }
+  h2 {
+    letter-spacing: -0.014em;
+  }
+  .text-xs,
+  .text-\[11px\] {
+    letter-spacing: 0.005em;
   }
 
   /* prefers-reduced-motion : aucune animation/transition */

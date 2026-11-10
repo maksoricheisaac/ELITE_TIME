@@ -73,8 +73,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let message = 'Erreur de connexion';
       try {
         const data = await res.json();
-        if (data?.error) {
-          message = data.error as string;
+        // NestJS renvoie { message: "Identifiants invalides", error: "Unauthorized" } :
+        // `message` est le texte destiné à l'utilisateur, `error` n'est que l'intitulé HTTP.
+        if (typeof data?.message === 'string' && data.message) {
+          message = data.message;
+        } else if (typeof data?.error === 'string' && data.error) {
+          message = data.error;
         }
       } catch {
         // ignore JSON parse error, keep generic message

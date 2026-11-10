@@ -8,9 +8,8 @@ import { useNotification } from "@/contexts/notification-context";
 import { formatMinutesHuman } from "@/lib/time-format";
 import { useRealtime } from "@/contexts/realtime-context";
 import Link from "next/link";
-import { Coffee, AlertTriangle, Loader2, LogIn, LogOut, Timer } from "lucide-react";
+import { Coffee, AlertTriangle, LogIn, LogOut, Timer } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
-import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { SafeUser } from "@/lib/session";
 import type { Pointage, Absence, Break as BreakModel } from "@/types/models";
@@ -495,9 +494,7 @@ export default function EmployeeDashboardClient({
 
 
 
-	const today = new Date();
 
-	const todayISO = today.toISOString().split("T")[0];
 
 
 
@@ -676,7 +673,6 @@ export default function EmployeeDashboardClient({
 		}
 	};
 
-	const primaryCtaDisabled = isPending || isOnLeaveToday;
 
 	const handleSaveLateReason = async () => {
 
@@ -1049,18 +1045,12 @@ export default function EmployeeDashboardClient({
 					<div className="flex flex-col gap-2 sm:flex-row">
 						<Button
 							onClick={handlePrimaryCta}
-							disabled={primaryCtaDisabled}
+							disabled={isOnLeaveToday}
+							loading={isPending}
 							variant={(isActive || hasIncompleteSession) ? "destructive" : "default"}
-							className="h-12 flex-1 cursor-pointer text-base font-semibold"
+							className="h-12 flex-1 text-base font-semibold"
 						>
-							{isPending ? (
-								<>
-									<Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-									Enregistrement…
-								</>
-							) : (
-								primaryCtaLabel
-							)}
+							{isPending ? "Enregistrement…" : primaryCtaLabel}
 						</Button>
 						{isActive && !isOnLeaveToday && (
 							<Button
