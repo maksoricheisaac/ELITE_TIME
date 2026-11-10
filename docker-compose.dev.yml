@@ -2,7 +2,7 @@
 # ELITE TIME — Développement avec hot reload
 #   docker compose -f docker-compose.dev.yml up -d --build
 # Web http://localhost:3011 · API http://localhost:4010/api/health (ports modifiables : WEB_DEV_PORT, API_DEV_PORT)
-# PostgreSQL localhost:5433 · Redis localhost:6380 (loopback uniquement)
+# PostgreSQL localhost:${PG_DEV_PORT:-5433} · Redis localhost:${REDIS_DEV_PORT:-6380} (loopback ; ports modifiables via PG_DEV_PORT, REDIS_DEV_PORT)
 #
 # Mots de passe/clés ci-dessous : VALEURS DE DÉVELOPPEMENT, jamais pour la production.
 # Les sources sont montées en volumes (rechargement auto). Modifier un package
@@ -42,7 +42,7 @@ services:
     volumes:
       - pgdata_dev:/var/lib/postgresql/data
     ports:
-      - "127.0.0.1:5433:5432"
+      - "127.0.0.1:${PG_DEV_PORT:-5433}:5432"
     networks: [dev]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U elitetime -d elitetime_dev"]
@@ -57,7 +57,7 @@ services:
     volumes:
       - redisdata_dev:/data
     ports:
-      - "127.0.0.1:6380:6379"
+      - "127.0.0.1:${REDIS_DEV_PORT:-6380}:6379"
     networks: [dev]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
