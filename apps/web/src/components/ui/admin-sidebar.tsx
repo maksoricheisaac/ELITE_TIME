@@ -15,6 +15,7 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
+import { useAuth } from '@/contexts/auth-context';
 import { navigationRegistry, type NavigationItem } from '@/lib/navigation-registry';
 import logo from '@public/logo/logo.png';
 import Image from 'next/image';
@@ -26,6 +27,7 @@ import { useSidebar } from '@/components/ui/sidebar';
  */
 export const AdminSidebar = memo(() => {
   const { has, loading, refetch } = useUserPermissions();
+  const { user } = useAuth();
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
 
@@ -36,12 +38,15 @@ export const AdminSidebar = memo(() => {
   const shouldShowMenuItem = useCallback((item: NavigationItem): boolean => {
     if (loading) return false;
     if (item.hiddenFromSidebar) return false;
+    // Items réservés à certains rôles (ex : « Mes pointages », « Mon rapport » = employés
+    // uniquement ; l'admin ne pointe pas). Même règle que navigation-guard.
+    if (item.requiredRoles && (!user || !item.requiredRoles.includes(user.role))) return false;
     // Masquer si l'utilisateur a un accès supérieur (ex : vue équipe remplace vue self)
     if (item.excludeWhenHasAny?.some((p) => has(p))) return false;
     const required = item.requiredPermissions ?? [];
     if (required.length === 0) return true;
     return required.some((p) => has(p));
-  }, [loading, has]);
+  }, [loading, has, user]);
 
   const registryItems = useMemo(
     () => navigationRegistry.flatMap((group) => group.items),
