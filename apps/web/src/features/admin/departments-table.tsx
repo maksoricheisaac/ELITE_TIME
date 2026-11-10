@@ -158,18 +158,19 @@ export default function DepartmentsTable({
       } },
     {
       accessorKey: "employeesCount",
-      header: () => <span className="block text-center">Employés</span>,
+      header: () => <span>Employés</span>,
       cell: ({ row }) => {
         const count = row.original.employeesCount;
-        const employeesLabel =
-          count === 0 ? "0 employé" : count === 1 ? "1 employé" : `${count} employés`;
-
-        const employeesClassName =
-          count === 0
-            ? "text-xs text-muted-foreground"
-            : "inline-flex items-center rounded-full bg-primary/5 px-2 py-1 text-xs font-medium text-primary";
-
-        return <span className={employeesClassName}>{employeesLabel}</span>;
+        const max = Math.max(1, ...data.map((d) => d.employeesCount));
+        return (
+          <div className="flex min-w-[8rem] items-center gap-3">
+            <span className={`tabular w-6 text-right font-medium ${count === 0 ? "text-muted-foreground" : ""}`}>{count}</span>
+            <span className="h-1.5 flex-1 rounded-full bg-muted" aria-hidden="true">
+              <span className="block h-full rounded-full bg-chart-1" style={{ width: `${(count / max) * 100}%` }} />
+            </span>
+            <span className="sr-only">{count === 1 ? "1 employé" : `${count} employés`}</span>
+          </div>
+        );
       } },
     {
       id: "actions",
@@ -257,5 +258,10 @@ export default function DepartmentsTable({
       } },
   ];
 
-  return <DataTable columns={columns} data={data} />;
+  // Une colonne « Description » entièrement vide n'apporte rien : on la masque
+  const hasDescriptions = data.some((d) => d.description);
+  const visibleColumns = columns.filter(
+    (c) => hasDescriptions || (c as { accessorKey?: string }).accessorKey !== "description",
+  );
+  return <DataTable columns={visibleColumns} data={data} />;
 }

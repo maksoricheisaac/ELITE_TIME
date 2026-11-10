@@ -16,10 +16,13 @@ interface PageHeaderProps {
 /** En-tête de page standard (design-system/MASTER.md §4) : un seul <h1> par page. */
 export function PageHeader({ title, description, badge, className, actions, children }: PageHeaderProps) {
   const right = actions ?? children
+  // Le surtitre n'apparaît que s'il apporte une information (pas « Départements » au-dessus de « Départements »)
+  const norm = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
+  const showBadge = badge && norm(badge) !== norm(title)
   return (
     <div className={cn("flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between", className)}>
       <div className="min-w-0 flex-1 space-y-1">
-        {badge && (
+        {showBadge && (
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{badge}</p>
         )}
         <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">{title}</h1>

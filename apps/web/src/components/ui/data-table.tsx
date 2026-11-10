@@ -50,7 +50,7 @@ export function DataTable<TData, TValue>({ columns, data, className, pageSize }:
   return (
     <div className="space-y-3">
       {/* Horizontal scroll wrapper — critical for mobile table display */}
-      <div className={cn("rounded-xl border border-border/60 overflow-hidden bg-card shadow-sm min-w-0 w-full", className)}>
+      <div className={cn("min-w-0 w-full overflow-hidden rounded-xl border border-border bg-card in-data-[slot=card]:rounded-none in-data-[slot=card]:border-0 in-data-[slot=card]:bg-transparent", className)}>
         <div className="overflow-x-auto w-full" style={{ WebkitOverflowScrolling: "touch" }}>
           <Table className="min-w-full table-auto">
             <TableHeader>

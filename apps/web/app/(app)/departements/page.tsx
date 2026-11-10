@@ -86,8 +86,8 @@ export default async function AppDepartmentsPage({
         inactiveEmployees={inactiveEmployees}
       />
 
-      <Card className="py-0">
-        <CardHeader className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between border-b border-border/40">
+      <Card className="gap-0 overflow-hidden py-0">
+        <CardHeader className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between border-b border-border">
           <div>
             <CardTitle className="text-base">Liste des départements</CardTitle>
             <CardDescription className="mt-0.5">
@@ -101,7 +101,7 @@ export default async function AppDepartmentsPage({
             {canCreate && <DepartmentsCreateDialog action={createDepartment} />}
           </div>
         </CardHeader>
-        <CardContent className="p-5">
+        <CardContent className="p-0">
           <DepartmentsTable
             data={filteredDepartments}
             onUpdateDepartment={updateDepartment}

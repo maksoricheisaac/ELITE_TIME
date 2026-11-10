@@ -543,8 +543,8 @@ export default function EmployeesTable({
   const paginatedEmployees = sortedEmployees.slice(startIndex, endIndex);
 
   return (
-    <Card className="py-0">
-      <CardHeader className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between border-b border-border/40">
+    <Card className="gap-0 overflow-hidden py-0">
+      <CardHeader className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between border-b border-border">
         <div>
           <CardTitle className="text-base">Liste des employés
             <span className="ml-2 text-sm font-normal text-muted-foreground">({employees.length})</span>
@@ -569,12 +569,14 @@ export default function EmployeesTable({
           </Button>
         )}
       </CardHeader>
-      <CardContent className="space-y-4 p-5">
-        <EmployeesFilters departments={departments} />
+      <CardContent className="p-0">
+        <div className="px-5 py-4">
+          <EmployeesFilters departments={departments} />
+        </div>
         <DataTable columns={columns} data={paginatedEmployees} />
 
         {totalItems > 0 && (
-          <div className="mt-4 flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-border px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Afficher</span>
               <Select

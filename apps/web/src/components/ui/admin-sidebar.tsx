@@ -81,7 +81,7 @@ export const AdminSidebar = memo(() => {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
-      <SidebarHeader className="flex h-20 items-center justify-center border-b border-sidebar-border group-data-[collapsible=icon]:h-14">
+      <SidebarHeader className="flex h-20 items-center justify-center border-sidebar-border group-data-[collapsible=icon]:h-14">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>

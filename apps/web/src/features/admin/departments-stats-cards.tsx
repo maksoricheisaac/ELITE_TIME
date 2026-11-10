@@ -1,6 +1,5 @@
 import type { Department } from "@/types/models";
 import { StatCard } from "@/components/ui/stat-card";
-import { BreakdownCard } from "@/components/ui/breakdown-card";
 
 interface DepartmentsStatsCardsProps {
   departments: Department[];
@@ -30,34 +29,26 @@ export function DepartmentsStatsCards({
     departments.length > 0 ? Math.round((totalEmployees / departments.length) * 10) / 10 : 0;
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <StatCard
         label="Départements"
         value={departments.length}
-        hint={`${departmentsWithEmployees} avec employés · ${departmentsWithoutEmployees} vides`}
+        hint={`${departmentsWithEmployees} avec employés · ${departmentsWithoutEmployees} vide${departmentsWithoutEmployees > 1 ? "s" : ""}`}
       />
       <StatCard
-        label="Total employés"
+        label="Collaborateurs"
         value={totalEmployees}
-        hint={`Moy. ${avgEmployeesPerDepartment} / département`}
+        hint={
+          topDepartment
+            ? `Plus grand : ${topDepartment.department as string} (${topDepartment._count._all}) · moy. ${avgEmployeesPerDepartment}`
+            : `Moy. ${avgEmployeesPerDepartment} / département`
+        }
       />
       <StatCard
         label="Actifs"
         value={activeEmployees}
         tone={inactiveEmployees > 0 ? "warning" : "success"}
         toneLabel={inactiveEmployees > 0 ? `${inactiveEmployees} inactif${inactiveEmployees > 1 ? "s" : ""}` : "Tous actifs"}
-      />
-      <BreakdownCard
-        title="Top département"
-        rows={topDepartment ? [{ label: topDepartment.department as string, value: topDepartment._count._all }] : []}
-        empty="Aucun département avec employés"
-      />
-      <BreakdownCard
-        title="Répartition"
-        rows={[
-          { label: "Avec employés", value: departmentsWithEmployees },
-          { label: "Vides", value: departmentsWithoutEmployees },
-        ]}
       />
     </div>
   );
