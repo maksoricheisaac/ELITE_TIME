@@ -119,5 +119,8 @@
       "types": "./dist/src/*.d.ts",
       "default": "./dist/src/*.js"
     }
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

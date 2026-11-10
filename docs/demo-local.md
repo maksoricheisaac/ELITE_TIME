@@ -5,10 +5,10 @@ Base séparée `elitetime_demo` (ne touche pas `elitetime_dev`). Prérequis : Po
 ```bash
 pnpm install
 pnpm build                                  # une fois (packages partagés)
-pnpm dev:demo                               # API :4000 + Web :3001
+pnpm dev:demo                               # API :4010 + Web :3011
 ```
 
-Ouvrir http://localhost:3001 — mot de passe de tous les comptes : `Demo#Elite2026`
+Ouvrir http://localhost:3011 — mot de passe de tous les comptes : `Demo#Elite2026`
 
 | Compte | Rôle |
 |---|---|

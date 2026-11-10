@@ -36,8 +36,17 @@
   "jest": {
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
-    "transform": { "^.+\\.ts$": "ts-jest" },
-    "moduleFileExtensions": ["js", "json", "ts"],
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
     "testEnvironment": "node"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

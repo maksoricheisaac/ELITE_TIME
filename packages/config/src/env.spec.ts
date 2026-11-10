@@ -27,3 +27,16 @@ describe('validateApiEnv', () => {
     expect(() => validateApiEnv({ ENCRYPTION_KEY: 'a'.repeat(64) })).toThrow();
   });
 });
+
+describe('variables vides (docker-compose)', () => {
+  it('traite une chaîne vide comme non définie', () => {
+    const env = validateApiEnv({
+      DATABASE_URL: 'postgresql://u:p@h/db',
+      ENCRYPTION_KEY: 'a'.repeat(64),
+      LDAP_URL: '',
+      COOKIE_SECURE: '',
+    });
+    expect(env.LDAP_URL).toBeUndefined();
+    expect(env.COOKIE_SECURE).toBeUndefined();
+  });
+});

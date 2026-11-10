@@ -6,18 +6,33 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
-    "./models": { "types": "./dist/generated/prisma/models.d.ts", "default": "./dist/generated/prisma/models.js" },
-    "./enums": { "types": "./dist/generated/prisma/enums.d.ts", "default": "./dist/generated/prisma/enums.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./models": {
+      "types": "./dist/generated/prisma/models.d.ts",
+      "default": "./dist/generated/prisma/models.js"
+    },
+    "./enums": {
+      "types": "./dist/generated/prisma/enums.d.ts",
+      "default": "./dist/generated/prisma/enums.js"
+    }
   },
-  "files": ["dist", "prisma"],
+  "files": [
+    "dist",
+    "prisma",
+    "prisma.config.ts",
+    "scripts"
+  ],
   "scripts": {
     "generate": "prisma generate",
     "build": "prisma generate && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "migrate:deploy": "prisma migrate deploy",
     "migrate:status": "prisma migrate status",
-    "migrate:dev": "prisma migrate dev"
+    "migrate:dev": "prisma migrate dev",
+    "migrate:safe": "node scripts/migrate.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -25,7 +40,8 @@
     "@prisma/client": "7.8.0",
     "dotenv": "^17.3.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

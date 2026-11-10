@@ -1,0 +1,24 @@
+# syntax=docker/dockerfile:1.7
+# Image de DÉVELOPPEMENT (hot reload) — utilisée par docker-compose.dev.yml
+# Dépendances installées dans l'image ; les sources sont montées en volumes.
+ARG NODE_VERSION=22
+FROM node:${NODE_VERSION}-bookworm-slim
+ENV PNPM_HOME=/pnpm CI=true NEXT_TELEMETRY_DISABLED=1
+ENV PATH=$PNPM_HOME:$PATH
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates tini \
+    && rm -rf /var/lib/apt/lists/* \
+    && corepack enable && corepack prepare pnpm@12.14.0 --activate
+WORKDIR /repo
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+COPY apps/worker/package.json apps/worker/
+COPY packages/config/package.json packages/config/
+COPY packages/database/package.json packages/database/
+COPY packages/shared/package.json packages/shared/
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm install --frozen-lockfile
+COPY . .
+# Valeur factice (prisma generate n'ouvre aucune connexion)
+RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" \
+    pnpm --filter @elitetime/database --filter @elitetime/shared --filter @elitetime/config build
+ENTRYPOINT ["tini", "--"]

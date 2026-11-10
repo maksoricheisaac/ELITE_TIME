@@ -70,7 +70,10 @@ async function bootstrap() {
    * localhost:4000. Si IIS n'est pas le seul point d'entrée, des
    * règles de pare-feu Windows doivent bloquer le port 4000 en entrée.
    */
-  await app.listen(port, '127.0.0.1');
-  console.log(`[backend] NestJS running on http://127.0.0.1:${port}`);
+  // Docker : HOST=0.0.0.0 (joignable par les autres conteneurs du réseau interne
+  // uniquement, aucun port publié). Hors conteneur : loopback seulement.
+  const host = process.env.HOST ?? '127.0.0.1';
+  await app.listen(port, host);
+  console.log(`[backend] NestJS running on http://${host}:${port}`);
 }
 void bootstrap();

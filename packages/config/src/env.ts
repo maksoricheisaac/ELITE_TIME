@@ -1,7 +1,15 @@
 import { z } from 'zod';
 
-const optionalString = z.string().trim().min(1).optional();
-const boolString = z.enum(['true', 'false']).optional();
+// Une variable vide (ex. "${LDAP_URL:-}" dans docker-compose) équivaut à non définie
+const emptyToUndefined = (v: unknown) => (v === '' ? undefined : v);
+const optionalString = z.preprocess(
+  emptyToUndefined,
+  z.string().trim().min(1).optional(),
+);
+const boolString = z.preprocess(
+  emptyToUndefined,
+  z.enum(['true', 'false']).optional(),
+);
 
 /**
  * Variables lues par l'API (et le worker). Les noms sont ceux déjà utilisés
@@ -12,6 +20,7 @@ const boolString = z.enum(['true', 'false']).optional();
 export const apiEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
+  HOST: optionalString,
 
   DATABASE_URL: z.string().min(1, 'obligatoire'),
   ENCRYPTION_KEY: z
