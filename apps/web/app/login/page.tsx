@@ -9,14 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import logo from '@public/logo/logo.png'
 import Image from 'next/image';
-import { Eye, EyeOff, Lock, User, ShieldCheck, Clock, CalendarCheck } from 'lucide-react';
+import { Eye, EyeOff, Lock, User } from 'lucide-react';
 import { LoginSchema, type LoginData } from '@/schemas/auth/login';
-
-const HIGHLIGHTS = [
-  { icon: Clock, text: 'Pointages, pauses et sessions multiples en temps réel' },
-  { icon: CalendarCheck, text: 'Congés, absences et corrections avec circuit de validation' },
-  { icon: ShieldCheck, text: 'Accès par rôles et permissions, données personnelles chiffrées' },
-];
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -49,45 +43,19 @@ export default function LoginPage() {
   const isSubmitting = form.formState.isSubmitting;
 
   return (
-    <div className="grid min-h-dvh bg-background lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-      {/* Panneau de marque (desktop) : aplat navy, aucun effet décoratif */}
-      <aside className="hidden flex-col justify-between bg-brand-900 p-12 text-white lg:flex">
-        <div className="inline-flex w-fit rounded-xl bg-white p-3">
-          <Image src={logo} alt="ELITE TIME" width={72} height={72} priority className="h-[72px] w-[72px] object-contain" />
-        </div>
-        <div className="max-w-md space-y-8">
-          <div className="space-y-3">
-            <h2 className="text-3xl font-semibold leading-tight tracking-tight">
-              Le temps de travail, simplement maîtrisé.
-            </h2>
-            <p className="text-base text-white/75">
-              Présences, congés et rapports d&apos;ELITE NETWORK dans un seul espace fiable.
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-8">
+      <main className="w-full max-w-sm">
+        <div className="mb-6 flex flex-col items-center gap-3 text-center">
+          <Image src={logo} alt="ELITE TIME" width={88} height={88} priority className="h-[88px] w-[88px] object-contain" />
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Connexion</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Accédez à votre espace ELITE TIME avec vos identifiants professionnels.
             </p>
           </div>
-          <ul className="space-y-4">
-            {HIGHLIGHTS.map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-start gap-3 text-sm text-white/85">
-                <Icon className="mt-0.5 size-4 shrink-0 text-brand-500" aria-hidden="true" />
-                {text}
-              </li>
-            ))}
-          </ul>
         </div>
-        <p className="text-xs text-white/55">© ELITE NETWORK — Usage interne</p>
-      </aside>
 
-      <main className="flex items-center justify-center px-4 py-8 sm:px-8">
-        <div className="w-full max-w-sm">
-          <div className="mb-8 flex flex-col items-center gap-3 text-center lg:items-start lg:text-left">
-            <Image src={logo} alt="ELITE TIME" width={64} height={64} priority className="h-16 w-16 object-contain lg:hidden" />
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Connexion</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Accédez à votre espace ELITE TIME avec vos identifiants professionnels.
-              </p>
-            </div>
-          </div>
-
+        <div className="rounded-xl border border-border bg-card p-6 sm:p-8">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5" noValidate>
               <FormField
@@ -176,6 +144,8 @@ export default function LoginPage() {
             </form>
           </Form>
         </div>
+
+        <p className="mt-6 text-center text-xs text-muted-foreground">© ELITE NETWORK — Usage interne</p>
       </main>
     </div>
   );
