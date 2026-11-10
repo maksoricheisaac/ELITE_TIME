@@ -11,7 +11,7 @@ interface PermissionBadgeProps {
 export async function PermissionBadge({ userId, userRole, variant = 'default' }: PermissionBadgeProps) {
   if (userRole === 'admin') {
     return (
-      <Badge variant="default" className="bg-red-500">
+      <Badge variant="default" className="bg-danger">
         <Shield className="w-3 h-3 mr-1" />
         Admin
       </Badge>
@@ -30,7 +30,7 @@ export async function PermissionBadge({ userId, userRole, variant = 'default' }:
     if (userRole === 'manager') {
       if (variant === 'compact') {
         return (
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+          <Badge variant="secondary" className="bg-info-soft text-info">
             <Key className="w-3 h-3 mr-1" />
             Rôle manager
           </Badge>
@@ -59,7 +59,7 @@ export async function PermissionBadge({ userId, userRole, variant = 'default' }:
 
   if (variant === 'compact') {
     return (
-      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+      <Badge variant="secondary" className="bg-info-soft text-info">
         <Key className="w-3 h-3 mr-1" />
         {permissionNames.length}
       </Badge>

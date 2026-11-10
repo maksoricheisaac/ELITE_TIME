@@ -199,18 +199,17 @@ export default function MyLeavesClient({ absences }: MyLeavesClientProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <div className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
-          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Mes congés
         </div>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Mes demandes de congé</h1>
+        <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">Mes demandes de congé</h1>
         <p className="text-sm text-muted-foreground">
           Demandez un congé et suivez le statut de vos demandes.
         </p>
       </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
-        <Card className="border border-border/80 bg-card/90 shadow-sm">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total</CardTitle>
             <CalendarRange className="h-4 w-4 text-muted-foreground" />
@@ -219,25 +218,25 @@ export default function MyLeavesClient({ absences }: MyLeavesClientProps) {
             <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
-        <Card className="border border-border/80 bg-card/90 shadow-sm">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">En attente</CardTitle>
-            <Clock3 className="h-4 w-4 text-amber-500" />
+            <Clock3 className="h-4 w-4 text-warning" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{stats.pending}</div>
+            <div className="text-2xl font-bold text-warning">{stats.pending}</div>
           </CardContent>
         </Card>
-        <Card className="border border-border/80 bg-card/90 shadow-sm">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Approuvés</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+            <CheckCircle2 className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">{stats.approved}</div>
+            <div className="text-2xl font-bold text-success">{stats.approved}</div>
           </CardContent>
         </Card>
-        <Card className="border border-border/80 bg-card/90 shadow-sm">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Rejetés</CardTitle>
             <XCircle className="h-4 w-4 text-destructive" />
@@ -246,7 +245,7 @@ export default function MyLeavesClient({ absences }: MyLeavesClientProps) {
             <div className="text-2xl font-bold text-destructive">{stats.rejected}</div>
           </CardContent>
         </Card>
-        <Card className="border border-border/80 bg-card/90 shadow-sm">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Annulées</CardTitle>
             <XCircle className="h-4 w-4 text-muted-foreground" />

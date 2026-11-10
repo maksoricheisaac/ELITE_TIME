@@ -72,7 +72,7 @@ export default async function AppPositionsPage({
       />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border/50 py-0">
+        <Card className="py-0">
           <CardContent className="p-3">
             <div className="flex items-center justify-between gap-2">
               <div>
@@ -80,19 +80,19 @@ export default async function AppPositionsPage({
                 <p className="text-2xl font-bold tabular-nums">{totalPositions}</p>
                 <p className="text-xs text-muted-foreground">{(departments as Department[]).length} départements</p>
               </div>
-              <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 p-2 shrink-0">
-                <Briefcase className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <div className="rounded-xl bg-info-soft p-2 shrink-0">
+                <Briefcase className="h-4 w-4 text-info" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/50 py-0">
+        <Card className="py-0">
           <CardContent className="p-3">
             <div className="flex items-center justify-between gap-2 mb-1.5">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Top dépts</p>
-              <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 p-2 shrink-0">
-                <Building2 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <div className="rounded-xl bg-warning-soft p-2 shrink-0">
+                <Building2 className="h-4 w-4 text-warning" />
               </div>
             </div>
             {topDepartments.length > 0 ? (
@@ -110,7 +110,7 @@ export default async function AppPositionsPage({
           </CardContent>
         </Card>
 
-        <Card className="border-border/50 py-0">
+        <Card className="py-0">
           <CardContent className="p-3">
             <div className="flex items-center justify-between gap-2">
               <div>
@@ -118,14 +118,14 @@ export default async function AppPositionsPage({
                 <p className="text-2xl font-bold tabular-nums">{departmentsWithoutPositions}</p>
                 <p className="text-xs text-muted-foreground">dépôts vides</p>
               </div>
-              <div className="rounded-xl bg-violet-50 dark:bg-violet-900/20 p-2 shrink-0">
-                <Layers className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+              <div className="rounded-xl bg-muted p-2 shrink-0">
+                <Layers className="h-4 w-4 text-muted-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/50 py-0">
+        <Card className="py-0">
           <CardContent className="p-3">
             <div className="flex items-center justify-between gap-2">
               <div>
@@ -133,15 +133,15 @@ export default async function AppPositionsPage({
                 <p className="text-2xl font-bold tabular-nums">{positionsByDepartment.get('Non assigné') ?? 0}</p>
                 <p className="text-xs text-muted-foreground">sans département</p>
               </div>
-              <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-2 shrink-0">
-                <Briefcase className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+              <div className="rounded-xl bg-muted p-2 shrink-0">
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="border-border/50 py-0">
+      <Card className="py-0">
         <CardHeader className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/40">
           <div>
             <CardTitle className="text-base">

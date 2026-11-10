@@ -38,7 +38,7 @@ export default async function ManualPointagesPage() {
         <BackButton />
       </PageHeader>
 
-      <Card className="border-border/50 py-0">
+      <Card className="py-0">
         <CardHeader className="border-b border-border/40 p-5">
           <CardTitle className="text-base">Enregistrer un pointage</CardTitle>
           <CardDescription>

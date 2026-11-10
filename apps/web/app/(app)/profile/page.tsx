@@ -33,7 +33,7 @@ export default async function AppEmployeeProfile() {
     <div className="space-y-6">
       <ProfileUpdateNotifier />
       <div>
-        <h1 className="text-xl font-bold sm:text-2xl">Mon profil</h1>
+        <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">Mon profil</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Consultez vos informations personnelles (lecture seule)</p>
       </div>
 

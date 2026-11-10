@@ -35,7 +35,7 @@ export default async function AppManagerProfile() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold sm:text-2xl">Mon profil</h1>
+        <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">Mon profil</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Gérez vos informations personnelles et votre équipe</p>
       </div>
 

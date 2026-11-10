@@ -1029,7 +1029,7 @@ export default function EmployeeDashboardClient({
 							<dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
 								<Timer className="size-3.5" aria-hidden="true" /> Travail
 							</dt>
-							<dd className="tabular mt-1 text-xl font-semibold sm:text-2xl">
+							<dd suppressHydrationWarning className="tabular mt-1 text-xl font-semibold sm:text-2xl">
 								{workedMinutes !== null ? formatMinutesHuman(workedMinutes) : "—"}
 							</dd>
 						</div>

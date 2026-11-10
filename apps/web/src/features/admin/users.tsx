@@ -347,7 +347,7 @@ export default function AdminUsersClient({ users }: AdminUsersClientProps) {
       <div className="space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Gestion des utilisateurs</h1>
+            <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">Gestion des utilisateurs</h1>
             <p className="text-muted-foreground">Gérez tous les utilisateurs de l&apos;entreprise</p>
           </div>
           <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
@@ -718,7 +718,7 @@ export default function AdminUsersClient({ users }: AdminUsersClientProps) {
                   setShowLocalOnly(e.target.checked);
                   setCurrentPage(1);
                 }}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
               />
             </div>
           </CardHeader>

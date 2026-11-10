@@ -6,19 +6,19 @@ import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Department } from "@/types/models";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Pencil, Trash2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   departmentUpdateFormSchema,
-  type DepartmentUpdateFormValues,
-} from "@/schemas/admin/forms/departments";
+  type DepartmentUpdateFormValues } from "@/schemas/admin/forms/departments";
 import { useNotification } from "@/contexts/notification-context";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
+import { RowActions } from "@/components/ui/row-actions";
 export type DepartmentWithEmployeeCount = Department & { employeesCount: number };
 
 interface DepartmentsTableProps {
@@ -44,10 +44,8 @@ function DepartmentEditDialog({ department, onUpdateDepartment }: DepartmentEdit
     defaultValues: {
       id: department.id,
       name: department.name,
-      description: department.description ?? "",
-    },
-    mode: "onSubmit",
-  });
+      description: department.description ?? "" },
+    mode: "onSubmit" });
 
   const onSubmit = (values: DepartmentUpdateFormValues) => {
     startTransition(() => {
@@ -128,16 +126,14 @@ export default function DepartmentsTable({
   onUpdateDepartment,
   onDeleteDepartment,
   canEdit = false,
-  canDelete = false,
-}: DepartmentsTableProps) {
+  canDelete = false }: DepartmentsTableProps) {
   const { showSuccess, showError } = useNotification();
   const router = useRouter();
   const columns: ColumnDef<DepartmentWithEmployeeCount>[] = [
     {
       accessorKey: "name",
       header: () => <span>Nom</span>,
-      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
-    },
+      cell: ({ row }) => <span className="font-medium">{row.original.name}</span> },
     {
       accessorKey: "description",
       header: () => <span>Description</span>,
@@ -159,8 +155,7 @@ export default function DepartmentsTable({
             </Tooltip>
           </TooltipProvider>
         );
-      },
-    },
+      } },
     {
       accessorKey: "employeesCount",
       header: () => <span className="block text-center">Employés</span>,
@@ -175,8 +170,7 @@ export default function DepartmentsTable({
             : "inline-flex items-center rounded-full bg-primary/5 px-2 py-1 text-xs font-medium text-primary";
 
         return <span className={employeesClassName}>{employeesLabel}</span>;
-      },
-    },
+      } },
     {
       id: "actions",
       header: () => <span className="block text-right">Actions</span>,
@@ -185,23 +179,18 @@ export default function DepartmentsTable({
         const count = department.employeesCount;
 
         return (
-          <div className="flex flex-wrap justify-end gap-2">
-            <TooltipProvider delayDuration={0}>
-              {/* Modifier */}
-              {canEdit && (
-                <Dialog>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DialogTrigger asChild>
-                        <Button className="cursor-pointer h-8 w-8 p-0" type="button" variant="outline" size="sm">
-                          <Pencil className="h-4 w-4" />
-                          <span className="sr-only">Modifier</span>
-                        </Button>
-                      </DialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>Modifier</TooltipContent>
-                  </Tooltip>
-                  <DialogContent>
+          <RowActions
+            label={`Actions pour ${department.name}`}
+            items={[
+              ...(canEdit
+                ? [
+                    {
+                      key: "edit",
+                      label: "Modifier",
+                      icon: Pencil,
+                      dialog: ({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) => (
+                        <Dialog open={open} onOpenChange={onOpenChange}>
+                          <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Modifier le département</DialogTitle>
                       <DialogDescription>
@@ -213,30 +202,22 @@ export default function DepartmentsTable({
                       onUpdateDepartment={onUpdateDepartment}
                     />
                   </DialogContent>
-                </Dialog>
-              )}
-
-              {/* Supprimer */}
-              {canDelete && (
-                <Dialog>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DialogTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          disabled={count > 0}
-                          className="cursor-pointer h-8 w-8 p-0"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Supprimer</span>
-                        </Button>
-                      </DialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>Supprimer</TooltipContent>
-                  </Tooltip>
-                  <DialogContent>
+                        </Dialog>
+                      ) },
+                  ]
+                : []),
+              ...(canDelete
+                ? [
+                    {
+                      key: "delete",
+                      label: "Supprimer",
+                      icon: Trash2,
+                      destructive: true,
+                disabled: count > 0,
+                disabledReason: "Contient des employés",
+                      dialog: ({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) => (
+                        <Dialog open={open} onOpenChange={onOpenChange}>
+                          <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Supprimer le département</DialogTitle>
                       <DialogDescription>
@@ -266,13 +247,14 @@ export default function DepartmentsTable({
                       </Button>
                     </form>
                   </DialogContent>
-                </Dialog>
-              )}
-            </TooltipProvider>
-          </div>
+                        </Dialog>
+                      ) },
+                  ]
+                : []),
+            ]}
+          />
         );
-      },
-    },
+      } },
   ];
 
   return <DataTable columns={columns} data={data} />;

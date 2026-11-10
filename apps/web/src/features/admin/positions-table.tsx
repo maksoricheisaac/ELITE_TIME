@@ -10,9 +10,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,11 +18,11 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from "@/components/ui/select";
 import { useNotification } from "@/contexts/notification-context";
 import { useRouter } from "next/navigation";
 
+import { RowActions } from "@/components/ui/row-actions";
 export type PositionWithDepartment = {
   id: string;
   name: string;
@@ -48,8 +46,7 @@ export function PositionsTable({
   onUpdatePosition,
   onDeletePosition,
   canEdit = false,
-  canDelete = false,
-}: PositionsTableProps) {
+  canDelete = false }: PositionsTableProps) {
   const { showSuccess, showError } = useNotification();
   const router = useRouter();
   const columns: ColumnDef<PositionWithDepartment>[] = [
@@ -60,8 +57,7 @@ export function PositionsTable({
         <span className="font-medium block truncate max-w-[120px] sm:max-w-[200px]">
           {row.original.name}
         </span>
-      ),
-    },
+      ) },
     {
       accessorKey: "department",
       header: () => <span>Département</span>,
@@ -70,8 +66,7 @@ export function PositionsTable({
         <span className="text-sm text-muted-foreground truncate max-w-[140px] block">
           {row.original.department.name}
         </span>
-      ),
-    },
+      ) },
     {
       accessorKey: "description",
       header: () => <span>Description</span>,
@@ -96,8 +91,7 @@ export function PositionsTable({
             </Tooltip>
           </TooltipProvider>
         );
-      },
-    },
+      } },
     {
       id: "actions",
       header: () => <span className="block text-right">Actions</span>,
@@ -105,23 +99,18 @@ export function PositionsTable({
         const position = row.original;
 
         return (
-          <div className="flex flex-wrap justify-end gap-2">
-            <TooltipProvider delayDuration={0}>
-              {/* Modifier */}
-              {canEdit && (
-                <Dialog>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DialogTrigger asChild>
-                        <Button className="cursor-pointer h-8 w-8 p-0" type="button" variant="outline" size="sm">
-                          <Pencil className="h-4 w-4" />
-                          <span className="sr-only">Modifier</span>
-                        </Button>
-                      </DialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>Modifier</TooltipContent>
-                  </Tooltip>
-                  <DialogContent>
+          <RowActions
+            label={`Actions pour ${position.name}`}
+            items={[
+              ...(canEdit
+                ? [
+                    {
+                      key: "edit",
+                      label: "Modifier",
+                      icon: Pencil,
+                      dialog: ({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) => (
+                        <Dialog open={open} onOpenChange={onOpenChange}>
+                          <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Modifier le poste</DialogTitle>
                       <DialogDescription>
@@ -191,24 +180,20 @@ export function PositionsTable({
                       </div>
                     </form>
                   </DialogContent>
-                </Dialog>
-              )}
-
-              {/* Supprimer */}
-              {canDelete && (
-                <Dialog>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DialogTrigger asChild>
-                        <Button className="cursor-pointer h-8 w-8 p-0" type="button" variant="destructive" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Supprimer</span>
-                        </Button>
-                      </DialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>Supprimer</TooltipContent>
-                  </Tooltip>
-                  <DialogContent>
+                        </Dialog>
+                      ) },
+                  ]
+                : []),
+              ...(canDelete
+                ? [
+                    {
+                      key: "delete",
+                      label: "Supprimer",
+                      icon: Trash2,
+                      destructive: true,
+                      dialog: ({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) => (
+                        <Dialog open={open} onOpenChange={onOpenChange}>
+                          <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Supprimer le poste</DialogTitle>
                       <DialogDescription>
@@ -238,13 +223,14 @@ export function PositionsTable({
                       </Button>
                     </form>
                   </DialogContent>
-                </Dialog>
-              )}
-            </TooltipProvider>
-          </div>
+                        </Dialog>
+                      ) },
+                  ]
+                : []),
+            ]}
+          />
         );
-      },
-    },
+      } },
   ];
 
   return <DataTable columns={columns} data={data} />;

@@ -2,15 +2,15 @@ export const dynamic = 'force-dynamic';
 
 import type { User, Permission } from '@/types/models';
 import { requireNavigationAccessById } from '@/lib/navigation-guard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, Users, Layers, HelpCircle, AlertTriangle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import { PermissionsManager } from '@/components/admin/permissions-manager';
 import { PageHeader } from '@/components/ui/page-header';
 import { serverGet } from '@/lib/server-api';
 import { PermissionsTree } from '@/components/admin/permissions-tree';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StatCard } from "@/components/ui/stat-card";
 
 type PermissionWithMeta = Permission & {
   module?: string | null;
@@ -62,49 +62,23 @@ export default async function PermissionsPage() {
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Utilisateurs actifs</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{users.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Modules</CardTitle>
-            <Layers className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{modules.size}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">{permissions.length} permissions</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">Élevé</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-700 dark:text-orange-400">{highCount}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">permissions HIGH</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-red-700 dark:text-red-400">Critique</CardTitle>
-            <Shield className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-700 dark:text-red-400">{criticalCount}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">permissions CRITICAL</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="Utilisateurs actifs" value={users.length} />
+        <StatCard label="Modules" value={modules.size} hint={`${permissions.length} permissions`} />
+        <StatCard
+          label="Niveau élevé"
+          value={highCount}
+          tone={highCount > 0 ? "warning" : "neutral"}
+          toneLabel="HIGH"
+          hint="permissions à surveiller"
+        />
+        <StatCard
+          label="Niveau critique"
+          value={criticalCount}
+          tone={criticalCount > 0 ? "danger" : "neutral"}
+          toneLabel="CRITICAL"
+          hint="permissions sensibles"
+        />
       </div>
 
       {/* Onglets : Attribution | Référentiel */}

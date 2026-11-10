@@ -21,11 +21,11 @@ function DownloadButton({ type, format, label, description, onDownload, isDownlo
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover: transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
-            {format === 'excel' ? <FileSpreadsheet className="h-5 w-5 text-green-600" /> : <FileText className="h-5 w-5 text-blue-600" />}
+            {format === 'excel' ? <FileSpreadsheet className="h-5 w-5 text-success" /> : <FileText className="h-5 w-5 text-info" />}
             {label}
           </CardTitle>
           <Badge variant={format === 'excel' ? 'default' : 'secondary'}>
@@ -132,8 +132,8 @@ export default function TestReportsPage() {
   return (
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Page de Test des Rapports</h1>
-        <p className="text-gray-600">
+        <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">Page de Test des Rapports</h1>
+        <p className="text-muted-foreground">
           Utilisez cette page pour tester et télécharger les différents rapports générés par le système.
           Les fichiers sont générés avec des données de test pour validation.
         </p>
@@ -150,7 +150,7 @@ export default function TestReportsPage() {
               </span>
               {reportType.title}
             </h2>
-            <p className="text-gray-600 mb-4">{reportType.description}</p>
+            <p className="text-muted-foreground mb-4">{reportType.description}</p>
             
             <div className="grid md:grid-cols-2 gap-4">
               <DownloadButton
@@ -174,12 +174,12 @@ export default function TestReportsPage() {
         ))}
       </div>
 
-      <div className="mt-12 p-6 bg-gray-50 rounded-lg">
+      <div className="mt-12 p-6 bg-muted rounded-lg">
         <h3 className="text-lg font-semibold mb-4">📋 Informations sur les Données</h3>
         <div className="grid md:grid-cols-2 gap-6 text-sm">
           <div>
             <h4 className="font-medium mb-2">Source des données:</h4>
-            <ul className="list-disc list-inside space-y-1 text-gray-600">
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
               <li>Utilisateurs actifs depuis la base de données</li>
               <li>Pointages réels enregistrés dans le système</li>
               <li>Filtrage automatique des employés cachés</li>
@@ -187,15 +187,15 @@ export default function TestReportsPage() {
           </div>
           <div>
             <h4 className="font-medium mb-2">Périodes couvertes:</h4>
-            <ul className="list-disc list-inside space-y-1 text-gray-600">
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
               <li>Journalier: Pointages du jour</li>
               <li>Hebdomadaire: 5 derniers jours</li>
               <li>Mensuel: Mois en cours complet</li>
             </ul>
           </div>
         </div>
-        <div className="mt-4 p-4 bg-blue-50 rounded border border-blue-200">
-          <p className="text-sm text-blue-800">
+        <div className="mt-4 p-4 bg-info-soft rounded border border-info/30">
+          <p className="text-sm text-info">
             <strong>Note:</strong> Ces fichiers sont générés avec les données réelles de la base de données. 
             Les employés sans pointages pour la période sélectionnée apparaîtront avec des champs vides. 
             Les données chiffrées sont automatiquement déchiffrées lors de la génération.

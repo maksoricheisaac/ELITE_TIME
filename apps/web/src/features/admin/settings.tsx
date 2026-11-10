@@ -1008,7 +1008,7 @@ export default function AdminSettingsClient({ initialSettings, emailScheduling }
 
       <div>
 
-        <h1 className="text-2xl font-bold sm:text-3xl">Paramètres système</h1>
+        <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">Paramètres système</h1>
 
         <p className="text-sm text-muted-foreground sm:text-base">Configuration globale de l&apos;application</p>
 

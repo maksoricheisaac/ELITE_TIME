@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataTable } from "@/components/ui/data-table";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
 import { LeaveRowActions } from "@/features/manager/leave-row-actions";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useNotification } from "@/contexts/notification-context";
@@ -30,7 +32,6 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { CalendarRange, CheckCircle2, AlertCircle, Building2, XCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 const TYPE_LABELS: Record<AbsenceType, string> = {
@@ -400,79 +401,34 @@ export default function LeaveManagementClient({ team, absences, currentUserRole 
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <div className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
-          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-          Gestion des congés
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Congés de l&apos;équipe</h1>
-        <p className="text-sm text-muted-foreground">
-          Créez et validez les congés de vos collaborateurs. Les congés approuvés seront pris en compte dans les
-          pointages et les rapports.
-        </p>
-      </div>
+      <PageHeader
+        badge="Gestion des congés"
+        title="Congés de l'équipe"
+        description="Créez et validez les congés de vos collaborateurs. Les congés approuvés seront pris en compte dans les pointages et les rapports."
+      />
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
-        <Card className="border border-border/80 bg-card/90 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total congés</CardTitle>
-            <CalendarRange className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{leaveStats.total}</div>
-            <p className="text-xs text-muted-foreground">Toutes les demandes enregistrées</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-border/80 bg-card/90 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Congés par département</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{leaveStats.departmentsWithLeaves}</div>
-            <p className="text-xs text-muted-foreground">
-              {leaveStats.departmentsWithLeaves === 0
-                ? "Aucun département avec des congés"
-                : leaveStats.topDepartment
-                  ? `Top : ${leaveStats.topDepartment} (${leaveStats.topDepartmentCount} congés)`
-                  : "Répartition des congés par département"}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-border/80 bg-card/90 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Approuvés</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">{leaveStats.approved}</div>
-            <p className="text-xs text-muted-foreground">Congés validés</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-border/80 bg-card/90 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">En cours aujourd&apos;hui</CardTitle>
-            <AlertCircle className="h-4 w-4 text-sky-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-sky-600">{leaveStats.activeToday}</div>
-            <p className="text-xs text-muted-foreground">Employés actuellement en congé</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-border/80 bg-card/90 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Annulés</CardTitle>
-            <XCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-muted-foreground">{leaveStats.cancelled}</div>
-            <p className="text-xs text-muted-foreground">Congés annulés</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <StatCard label="Total congés" value={leaveStats.total} hint="Toutes les demandes enregistrées" />
+        <StatCard
+          label="Départements concernés"
+          value={leaveStats.departmentsWithLeaves}
+          hint={
+            leaveStats.departmentsWithLeaves === 0
+              ? "Aucun département avec des congés"
+              : leaveStats.topDepartment
+                ? `Top : ${leaveStats.topDepartment} (${leaveStats.topDepartmentCount} congés)`
+                : "Répartition par département"
+          }
+        />
+        <StatCard label="Approuvés" value={leaveStats.approved} tone="success" toneLabel="Validés" hint="Congés validés" />
+        <StatCard
+          label="En cours aujourd'hui"
+          value={leaveStats.activeToday}
+          tone={leaveStats.activeToday > 0 ? "info" : "neutral"}
+          toneLabel={leaveStats.activeToday > 0 ? "En congé" : undefined}
+          hint="Employés actuellement en congé"
+        />
+        <StatCard label="Annulés" value={leaveStats.cancelled} hint="Congés annulés" />
       </div>
 
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

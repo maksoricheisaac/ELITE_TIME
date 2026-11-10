@@ -167,3 +167,9 @@ Dégradés violet/rose, effets de verre/flou, ombres portées sur cartes au repo
 ## 11. Correspondance avec le code
 
 `apps/web/app/globals.css` expose ces tokens en variables CSS (`--primary`, `--card`, `--border`, `--chart-1..5`, `--success|warning|danger|info` + `-soft`) et dans `@theme inline` pour Tailwind (`bg-primary`, `text-success`…). Composants partagés : `PageHeader`, `StatCard`, `StatusBadge` (`apps/web/src/components/ui/`).
+
+## 12. Composants partagés ajoutés (passe finale)
+
+- `RowActions` (`ui/row-actions.tsx`) : **colonne « Actions » de tous les tableaux** = bouton « ⋯ » → menu ; actions destructives séparées et en rouge ; indisponibilité expliquée (« Contient des employés ») ; dialogues et confirmations rendus hors du menu. Utilisé par Employés, Départements, Postes (Congés a son équivalent `LeaveRowActions`).
+- `StatCard` / `BreakdownCard` : toutes les cartes de synthèse (aucune pastille d'icône colorée). `Card` : bordure 1 px, **aucune ombre ni élévation au survol**.
+- Couleurs : plus de classes Tailwind « en dur » (`emerald-600`, `amber-50`…) ; uniquement `success / warning / danger / info` (+ `-soft`) et `muted`, qui gèrent le thème sombre. Titres de page : `text-xl font-semibold tracking-[-0.022em] sm:text-2xl` partout.

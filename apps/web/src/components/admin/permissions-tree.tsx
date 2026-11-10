@@ -26,10 +26,10 @@ interface PermissionsTreeProps {
 }
 
 const RISK_CONFIG: Record<PermissionRisk, { label: string; color: string; bg: string; icon: typeof Shield }> = {
-  LOW:      { label: 'Faible',   color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800', icon: Shield },
-  MEDIUM:   { label: 'Moyen',    color: 'text-blue-700 dark:text-blue-400',       bg: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800',             icon: Shield },
-  HIGH:     { label: 'Élevé',    color: 'text-orange-700 dark:text-orange-400',   bg: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800',     icon: AlertTriangle },
-  CRITICAL: { label: 'Critique', color: 'text-red-700 dark:text-red-400',         bg: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',                 icon: Shield },
+  LOW:      { label: 'Faible',   color: 'text-success', bg: 'bg-success-soft border-success/30', icon: Shield },
+  MEDIUM:   { label: 'Moyen',    color: 'text-info',       bg: 'bg-info-soft border-info/30',             icon: Shield },
+  HIGH:     { label: 'Élevé',    color: 'text-warning',   bg: 'bg-warning-soft border-warning/30',     icon: AlertTriangle },
+  CRITICAL: { label: 'Critique', color: 'text-danger',         bg: 'bg-danger-soft border-danger/30',                 icon: Shield },
 };
 
 const RISK_LEVELS: PermissionRisk[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];

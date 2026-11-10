@@ -8,13 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Download, Users, FileSpreadsheet, ExternalLink } from "lucide-react";
+import { Download, FileSpreadsheet, ExternalLink } from "lucide-react";
 import { EmployeeReportDateRangeFilter } from "@/features/manager/employee-report-date-range-filter";
 import type { User, Pointage, Break as BreakModel, Absence } from "@/types/models";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatMinutesHuman } from "@/lib/time-format";
 
+import { StatCard } from "@/components/ui/stat-card";
 interface ManagerReportsClientProps {
   team: User[];
   pointages: Pointage[];
@@ -700,11 +701,10 @@ export default function ManagerReportsClient({
         <div>
 
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-primary mb-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
             Rapports
           </div>
 
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Rapports</h1>
+          <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">Rapports</h1>
 
           <p className="text-sm text-muted-foreground mt-1">
 
@@ -804,72 +804,10 @@ export default function ManagerReportsClient({
 
 
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-
-        <Card>
-
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-
-            <CardTitle className="text-sm font-medium">Heures totales</CardTitle>
-
-            <Users className="h-4 w-4 text-muted-foreground" />
-
-          </CardHeader>
-
-          <CardContent>
-
-            <div className="text-2xl font-bold">{formatMinutesHuman(totalTeamMinutes)}</div>
-
-            <p className="text-xs text-muted-foreground">Pour toute l&apos;équipe</p>
-
-          </CardContent>
-
-        </Card>
-
-    
-
-        <Card>
-
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-
-            <CardTitle className="text-sm font-medium">Moyenne par employé</CardTitle>
-
-            <Users className="h-4 w-4 text-muted-foreground" />
-
-          </CardHeader>
-
-          <CardContent>
-
-            <div className="text-2xl font-bold">{formatMinutesHuman(avgMinutes)}</div>
-
-            <p className="text-xs text-muted-foreground">Par employé sur la période</p>
-
-          </CardContent>
-
-        </Card>
-
-    
-
-        <Card>
-
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-
-            <CardTitle className="text-sm font-medium">Heures sup totales</CardTitle>
-
-            <Users className="h-4 w-4 text-muted-foreground" />
-
-          </CardHeader>
-
-          <CardContent>
-
-            <div className="text-2xl font-bold">{formatMinutesHuman(totalOvertimeMinutes)}</div>
-
-            <p className="text-xs text-muted-foreground">Pour toute l&apos;équipe</p>
-
-          </CardContent>
-
-        </Card>
-
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatCard label="Heures totales" value={formatMinutesHuman(totalTeamMinutes)} hint="Pour toute l'équipe" />
+        <StatCard label="Moyenne par employé" value={formatMinutesHuman(avgMinutes)} hint="Par employé sur la période" />
+        <StatCard label="Heures sup totales" value={formatMinutesHuman(totalOvertimeMinutes)} hint="Pour toute l'équipe" />
       </div>
 
     

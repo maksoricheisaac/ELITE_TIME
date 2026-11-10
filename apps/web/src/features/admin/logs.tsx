@@ -190,7 +190,7 @@ export default function LogsClient({ logs: logsData, employees, resolvedFrom, re
   return (
     <div className="space-y-6" suppressHydrationWarning>
       <div>
-        <h1 className="text-2xl font-bold sm:text-3xl">Logs &amp; Activité</h1>
+        <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">Logs &amp; Activité</h1>
         <p className="text-sm text-muted-foreground sm:text-base">Historique des actions et événements système</p>
       </div>
 

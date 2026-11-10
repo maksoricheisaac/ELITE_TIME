@@ -370,7 +370,7 @@ export default function AdminEmailsClient({ emailScheduling }: AdminEmailsClient
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gestion des Emails</h1>
+          <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">Gestion des Emails</h1>
           <p className="text-muted-foreground mt-1">
             Configurez l&apos;envoi automatique des rapports de pointage
           </p>
@@ -418,7 +418,7 @@ export default function AdminEmailsClient({ emailScheduling }: AdminEmailsClient
           <Card className="border-t-4 border-t-blue-500">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Calendar1 className="h-5 w-5 text-blue-500" />
+                <Calendar1 className="h-5 w-5 text-info" />
                 <div>
                   <CardTitle>Rapport quotidien</CardTitle>
                   <CardDescription>Envoi automatique chaque jour à l&apos;heure configurée</CardDescription>
@@ -511,7 +511,7 @@ export default function AdminEmailsClient({ emailScheduling }: AdminEmailsClient
           <Card className="border-t-4 border-t-green-500">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <CalendarDays className="h-5 w-5 text-green-500" />
+                <CalendarDays className="h-5 w-5 text-success" />
                 <div>
                   <CardTitle>Rapport hebdomadaire</CardTitle>
                   <CardDescription>Envoi automatique une fois par semaine</CardDescription>
@@ -626,7 +626,7 @@ export default function AdminEmailsClient({ emailScheduling }: AdminEmailsClient
           <Card className="border-t-4 border-t-purple-500">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <CalendarRange className="h-5 w-5 text-purple-500" />
+                <CalendarRange className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <CardTitle>Rapport mensuel</CardTitle>
                   <CardDescription>Envoi automatique une fois par mois — couvre le mois précédent</CardDescription>

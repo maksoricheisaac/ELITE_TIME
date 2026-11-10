@@ -86,7 +86,7 @@ export default async function AppDepartmentsPage({
         inactiveEmployees={inactiveEmployees}
       />
 
-      <Card className="border-border/50 py-0">
+      <Card className="py-0">
         <CardHeader className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between border-b border-border/40">
           <div>
             <CardTitle className="text-base">Liste des départements</CardTitle>

@@ -103,11 +103,10 @@ export default async function PointageDetailPage({ params, searchParams }: Point
     <div className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Détails des pointages
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">
             {employee.firstname} {employee.lastname}
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -122,7 +121,7 @@ export default async function PointageDetailPage({ params, searchParams }: Point
         </Button>
       </div>
 
-      <Card className="border border-border/80 bg-card/90 shadow-sm">
+      <Card>
         <CardHeader className="space-y-4">
           <div className="flex flex-col gap-1">
             <CardTitle>Historique des pointages</CardTitle>

@@ -116,7 +116,7 @@ const columns: ColumnDef<EmployeePointageDetailRow>[] = [
           <div className="flex flex-col gap-1">
             <Badge
               variant="outline"
-              className="w-fit border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800/60 dark:bg-amber-900/40 dark:text-amber-200"
+              className="w-fit border-warning/30 bg-warning-soft text-warning"
             >
               En retard
             </Badge>
@@ -133,7 +133,7 @@ const columns: ColumnDef<EmployeePointageDetailRow>[] = [
         return (
           <Badge
             variant="outline"
-            className="border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800/60 dark:bg-sky-900/40 dark:text-sky-200"
+            className="border-info/30 bg-info-soft text-info"
           >
             Incomplet
           </Badge>
@@ -144,7 +144,7 @@ const columns: ColumnDef<EmployeePointageDetailRow>[] = [
         return (
           <Badge
             variant="outline"
-            className="border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-800/60 dark:bg-blue-900/40 dark:text-blue-200"
+            className="border-info/30 bg-info-soft text-info"
           >
             Clôturé admin
           </Badge>
@@ -155,12 +155,12 @@ const columns: ColumnDef<EmployeePointageDetailRow>[] = [
         <div className="flex flex-col gap-1">
           <Badge
             variant="outline"
-            className="w-fit border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-900/30 dark:text-emerald-200"
+            className="w-fit border-success/30 bg-success-soft text-success"
           >
             À l&apos;heure
           </Badge>
           {row.original.earlyExitReason && (
-            <span className="text-[10px] text-blue-600/80 italic max-w-[150px] truncate" title={row.original.earlyExitReason}>
+            <span className="text-[10px] text-info italic max-w-[150px] truncate" title={row.original.earlyExitReason}>
               Sortie: {row.original.earlyExitReason}
             </span>
           )}

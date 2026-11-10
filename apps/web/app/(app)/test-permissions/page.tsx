@@ -8,7 +8,7 @@ export default function TestPermissionsPage() {
     <DynamicLayout>
       <div className="space-y-6">
         <div className="space-y-3">
-          <h1 className="text-3xl font-bold tracking-tight">Test des permissions</h1>
+          <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">Test des permissions</h1>
           <p className="text-sm text-muted-foreground">
             Cette page démontre comment la sidebar s&apos;adapte aux permissions de l&apos;utilisateur.
           </p>
@@ -18,7 +18,7 @@ export default function TestPermissionsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                <CheckCircle className="h-5 w-5 text-success" />
                 Comment ça fonctionne
               </CardTitle>
             </CardHeader>
@@ -45,7 +45,7 @@ export default function TestPermissionsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-600" />
+                <XCircle className="h-5 w-5 text-danger" />
                 Exemples concrets
               </CardTitle>
             </CardHeader>
@@ -64,7 +64,7 @@ export default function TestPermissionsPage() {
                 <ul className="text-sm space-y-1 text-muted-foreground">
                   <li>• Dashboard</li>
                   <li>• Mes pointages</li>
-                  <li>• <span className="text-green-600 font-medium">Rapports</span> ✓</li>
+                  <li>• <span className="text-success font-medium">Rapports</span> ✓</li>
                   <li>• Profil</li>
                 </ul>
               </div>
@@ -74,9 +74,9 @@ export default function TestPermissionsPage() {
                 <ul className="text-sm space-y-1 text-muted-foreground">
                   <li>• Dashboard</li>
                   <li>• Mes pointages</li>
-                  <li>• <span className="text-green-600 font-medium">Employés</span> ✓</li>
-                  <li>• <span className="text-green-600 font-medium">Pointages équipe</span> ✓</li>
-                  <li>• <span className="text-green-600 font-medium">Validations</span> ✓</li>
+                  <li>• <span className="text-success font-medium">Employés</span> ✓</li>
+                  <li>• <span className="text-success font-medium">Pointages équipe</span> ✓</li>
+                  <li>• <span className="text-success font-medium">Validations</span> ✓</li>
                   <li>• Profil</li>
                 </ul>
               </div>
@@ -104,8 +104,8 @@ export default function TestPermissionsPage() {
               </li>
             </ol>
             
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
+            <div className="mt-4 p-3 bg-info-soft rounded-lg">
+              <p className="text-sm text-info">
                 <strong>Note :</strong> Les admins voient toujours tous les liens, 
                 mais les autres utilisateurs ne voient que les liens pour lesquels 
                 ils ont les permissions requises.

@@ -82,7 +82,7 @@ export function AiChatWidget() {
               className="flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium text-foreground shadow-lg transition-all hover:shadow-xl"
               aria-label="Ouvrir l'assistant IA"
             >
-              <span className="flex h-2 w-2 rounded-full bg-green-500 shadow-sm shadow-green-500/50" />
+              <span className="flex h-2 w-2 rounded-full bg-success shadow-sm shadow-green-500/50" />
               EliteTime IA
             </motion.button>
           )}
@@ -133,7 +133,7 @@ export function AiChatWidget() {
             <motion.span
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm"
+              className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[9px] font-bold text-white shadow-sm"
               aria-label={`${unreadCount} nouveau(x) message(s)`}
             >
               {unreadCount > 9 ? "9+" : unreadCount}

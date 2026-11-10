@@ -85,6 +85,10 @@ type AverageRow = {
   avgBreakDurationMinutes: number;
 
   avgWorkDurationMinutes: number;
+  /** Jours distincts avec au moins un pointage sur la période */
+  workedDays: number;
+  /** Jours distincts avec un retard sur la période */
+  lateDays: number;
 
 };
 
@@ -214,10 +218,10 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
     const today = new Date();
 
-    const defaultFrom = new Date();
-
-    defaultFrom.setDate(today.getDate() - 30);
-
+    // Même défaut que le serveur (app/(app)/pointages/page.tsx) et que le filtre de période : AUJOURD'HUI.
+    // L'ancien défaut (30 jours) ne correspondait pas aux données chargées (la journée seulement) : l'écran
+    // basculait en mode « moyennes » et affichait « Non pointé » pour tout le monde.
+    const defaultFrom = new Date(today);
     defaultFrom.setHours(0, 0, 0, 0);
 
     today.setHours(23, 59, 59, 999);
@@ -656,6 +660,8 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
         avgBreakDurationMinutes,
 
         avgWorkDurationMinutes,
+        workedDays: new Set(employeePointages.map((p) => String(p.date).slice(0, 10))).size,
+        lateDays: new Set(employeePointages.filter((p) => p.status === "late").map((p) => String(p.date).slice(0, 10))).size,
 
       } satisfies AverageRow;
 
@@ -938,12 +944,12 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
                   return (
                     <div key={p.id} className="text-[10px] leading-tight border-l-2 border-primary/20 pl-1 py-0.5">
                       {p.lateReason && (
-                        <div className="text-amber-600 dark:text-amber-400">
+                        <div className="text-warning">
                           <span className="font-semibold">Retard:</span> {p.lateReason}
                         </div>
                       )}
                       {p.earlyExitReason && (
-                        <div className="text-blue-600 dark:text-blue-400">
+                        <div className="text-info">
                           <span className="font-semibold">Sortie:</span> {p.earlyExitReason}
                         </div>
                       )}
@@ -1135,11 +1141,26 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
       id: "status",
 
-      header: () => <span>Statut</span>,
+      header: () => <span>{isSingleDay ? "Statut" : "Jours pointés"}</span>,
 
       cell: ({ row }) => {
 
-        const pointage = isSingleDay ? (row.original as TodayRow).pointage : null;
+        if (!isSingleDay) {
+          const r = row.original as AverageRow;
+          return (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="tabular">
+                {r.workedDays} jour{r.workedDays > 1 ? "s" : ""}
+              </span>
+              {r.lateDays > 0 && (
+                <Badge variant="warning">
+                  {r.lateDays} retard{r.lateDays > 1 ? "s" : ""}
+                </Badge>
+              )}
+            </div>
+          );
+        }
+        const pointage = (row.original as TodayRow).pointage;
 
         const employee = row.original.employee;
 
@@ -1157,7 +1178,7 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
               variant="outline"
 
-              className="border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800/60 dark:bg-sky-900/40 dark:text-sky-200"
+              className="border-info/30 bg-info-soft text-info"
 
             >
 
@@ -1179,7 +1200,7 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
               variant="outline"
 
-              className="border-muted bg-muted/40 text-muted-foreground dark:border-slate-700 dark:bg-slate-900/40"
+              className="border-muted bg-muted/40 text-muted-foreground"
 
             >
 
@@ -1203,7 +1224,7 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
               variant="outline"
 
-              className="border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-900/40 dark:text-emerald-200"
+              className="border-success/30 bg-success-soft text-success"
 
             >
 
@@ -1225,7 +1246,7 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
               variant="outline"
 
-              className="border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800/60 dark:bg-amber-900/40 dark:text-amber-200"
+              className="border-warning/30 bg-warning-soft text-warning"
 
             >
 
@@ -1241,7 +1262,7 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
           return (
             <Badge
               variant="outline"
-              className="border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-800/60 dark:bg-blue-900/40 dark:text-blue-200"
+              className="border-info/30 bg-info-soft text-info"
             >
               Sortie anticipée
             </Badge>
@@ -1258,7 +1279,7 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
               variant="outline"
 
-              className="border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800/60 dark:bg-sky-900/40 dark:text-sky-200"
+              className="border-info/30 bg-info-soft text-info"
 
             >
 
@@ -1278,7 +1299,7 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
               variant="outline"
 
-              className="border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-800/60 dark:bg-blue-900/40 dark:text-blue-200"
+              className="border-info/30 bg-info-soft text-info"
 
             >
 
@@ -1298,7 +1319,7 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
             variant="outline"
 
-            className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-900/30 dark:text-emerald-200"
+            className="border-success/30 bg-success-soft text-success"
 
           >
 
@@ -1332,15 +1353,13 @@ export default function ManagerPointagesClient({ team, pointages, absences, brea
 
           <div className="space-y-2 min-w-0">
 
-            <div className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
-
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
 
               Pointages
 
             </div>
 
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Pointages de mon équipe</h1>
+            <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">Pointages de mon équipe</h1>
 
             <p className="text-sm text-muted-foreground">
 

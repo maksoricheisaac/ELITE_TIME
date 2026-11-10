@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Clock } from "lucide-react";
 import type { Pointage } from "@/types/models";
+import { DailyHoursChart } from "@/components/charts/daily-hours-chart";
 import { PresenceChart } from "@/components/charts/presence-chart";
-import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { EmployeeReportDateRangeFilter } from "@/features/manager/employee-report-date-range-filter";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -42,7 +42,7 @@ function getStatusBadge(status: string) {
       return (
         <Badge
           variant="outline"
-          className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-900/30 dark:text-emerald-200"
+          className="border-success/30 bg-success-soft text-success"
         >
           À l&apos;heure
         </Badge>
@@ -51,7 +51,7 @@ function getStatusBadge(status: string) {
       return (
         <Badge
           variant="outline"
-          className="border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800/60 dark:bg-amber-900/40 dark:text-amber-200"
+          className="border-warning/30 bg-warning-soft text-warning"
         >
           Retard
         </Badge>
@@ -60,7 +60,7 @@ function getStatusBadge(status: string) {
       return (
         <Badge
           variant="outline"
-          className="border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800/60 dark:bg-sky-900/40 dark:text-sky-200"
+          className="border-info/30 bg-info-soft text-info"
         >
           Incomplet
         </Badge>
@@ -69,7 +69,7 @@ function getStatusBadge(status: string) {
       return (
         <Badge
           variant="outline"
-          className="border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-800/60 dark:bg-blue-900/40 dark:text-blue-200"
+          className="border-info/30 bg-info-soft text-info"
         >
           Clôturé admin
         </Badge>
@@ -250,7 +250,7 @@ export default function EmployeePointagesClient({ pointages, resolvedFrom, resol
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl md:text-3xl">
+        <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">
           Mes pointages
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -271,79 +271,21 @@ export default function EmployeePointagesClient({ pointages, resolvedFrom, resol
           description={`Présence ou absence quotidienne sur les ${rangeLabel.toLowerCase()}`}
         />
 
-        <Card className="border border-primary/20 rounded-xl shadow-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-              <Clock className="h-5 w-5 text-primary" />
-              <span>Durée de travail quotidienne</span>
-            </CardTitle>
-            <CardDescription>
-              Heures travaillées par jour sur les {rangeLabel.toLowerCase()}.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pb-2">
-            <ResponsiveContainer width="100%" height="100%" minHeight={200} aspect={2.5}>
-              <LineChart data={workDurationData} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 11 }}
-                  tickLine={false}
-                  axisLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tick={{ fontSize: 11 }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={32}
-                />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload as (typeof workDurationData)[number];
-                      return (
-                        <div className="rounded-lg border bg-background p-2 shadow-sm text-sm">
-                          <div className="font-medium mb-1">{label}</div>
-                          <div className="flex flex-col gap-1">
-                            <span>
-                              <span className="text-[0.70rem] uppercase text-muted-foreground mr-1">Durée</span>
-                              <span className="font-bold">{formatMinutesHuman(Math.round(data.durationHours * 60))}</span>
-                            </span>
-                            {data.hasPointage ? (
-                              <span className="text-[0.70rem] uppercase text-muted-foreground">
-                                {data.hasLate
-                                  ? "Statut : Retard"
-                                  : data.hasIncomplete
-                                  ? "Statut : Incomplet"
-                                  : "Statut : Normal"}
-                              </span>
-                            ) : (
-                              <span className="text-[0.70rem] uppercase text-muted-foreground">Aucun pointage</span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="durationHours"
-                  stroke="hsl(221, 83%, 53%)"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <DailyHoursChart
+          title="Durée de travail quotidienne"
+          description={`Heures travaillées par jour sur les ${rangeLabel.toLowerCase()}`}
+          data={workDurationData
+            .filter((d) => d.hasPointage)
+            .map((d) => ({
+              label: d.date,
+              hours: Math.round(d.durationHours * 10) / 10,
+              kind: d.hasIncomplete ? ("incomplete" as const) : d.hasLate ? ("late" as const) : ("normal" as const),
+            }))}
+        />
       </div>
       
 
-      <Card className="border border-primary/20 rounded-xl shadow-md">
+      <Card>
         <CardHeader className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>

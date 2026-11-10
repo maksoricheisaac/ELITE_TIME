@@ -107,11 +107,11 @@ export default function PermissionsGuidePage() {
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <div className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           <Shield className="h-3 w-3" />
           Guide
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">Guide des permissions</h1>
+        <h1 className="text-xl font-semibold tracking-[-0.022em] text-foreground sm:text-2xl">Guide des permissions</h1>
         <p className="text-sm text-muted-foreground">
           Comprendre et utiliser le système de permissions granulaires <code>module.action</code> pour contrôler l&apos;accès aux fonctionnalités.
         </p>
@@ -236,7 +236,7 @@ export default function PermissionsGuidePage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 mt-0.5 text-green-600 shrink-0" />
+            <CheckCircle className="h-5 w-5 mt-0.5 text-success shrink-0" />
             <div>
               <h4 className="font-medium">Principe du moindre privilège</h4>
               <p className="text-sm text-muted-foreground">
@@ -245,7 +245,7 @@ export default function PermissionsGuidePage() {
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 mt-0.5 text-green-600 shrink-0" />
+            <CheckCircle className="h-5 w-5 mt-0.5 text-success shrink-0" />
             <div>
               <h4 className="font-medium">Révocation régulière</h4>
               <p className="text-sm text-muted-foreground">
@@ -254,7 +254,7 @@ export default function PermissionsGuidePage() {
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 mt-0.5 text-green-600 shrink-0" />
+            <CheckCircle className="h-5 w-5 mt-0.5 text-success shrink-0" />
             <div>
               <h4 className="font-medium">Granularité</h4>
               <p className="text-sm text-muted-foreground">

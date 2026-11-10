@@ -45,7 +45,7 @@ export const DashboardCard = memo(({ stat, index }: DashboardCardProps) => {
 
         <div className="mt-4 flex items-center justify-between">
           <div className={`flex items-center gap-1 text-xs font-medium ${
-            stat.changeType === 'positive' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'
+            stat.changeType === 'positive' ? 'text-success' : 'text-danger'
           }`}>
             <TrendIcon className="h-3.5 w-3.5" />
             <span>{stat.change}</span>

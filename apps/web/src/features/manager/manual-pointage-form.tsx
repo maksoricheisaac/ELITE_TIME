@@ -658,8 +658,8 @@ export function ManualPointageForm({ managerId, workStartTime, workEndTime, empl
                 <th className="px-3 py-2 text-left font-medium">Employé</th>
                 <th className="px-3 py-2 text-left font-medium">Heure d&apos;entrée</th>
                 <th className="px-3 py-2 text-left font-medium">Heure de sortie</th>
-                <th className="px-3 py-2 text-left font-medium text-amber-600 dark:text-amber-400">Raison (retard)</th>
-                <th className="px-3 py-2 text-left font-medium text-blue-600 dark:text-blue-400">Raison (sortie)</th>
+                <th className="px-3 py-2 text-left font-medium text-warning">Raison (retard)</th>
+                <th className="px-3 py-2 text-left font-medium text-info">Raison (sortie)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-background/80">
