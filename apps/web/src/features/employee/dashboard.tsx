@@ -8,12 +8,10 @@ import { useNotification } from "@/contexts/notification-context";
 import { formatMinutesHuman } from "@/lib/time-format";
 import { useRealtime } from "@/contexts/realtime-context";
 import Link from "next/link";
-import { Coffee, AlertTriangle, Loader2, LogIn, LogOut, Timer } from "lucide-react";
+import { Coffee, AlertTriangle, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
-import { StatCard } from "@/components/ui/stat-card";
-import { StatusBadge } from "@/components/ui/status-badge";
 import type { SafeUser } from "@/lib/session";
-import type { Pointage, Absence, Break as BreakModel } from "@/types/models";
+import type { Pointage, Break as BreakModel } from "@/types/models";
 import { useRouter } from "next/navigation";
 import { startEmployeePointage, endEmployeePointage, updateEmployeeLateReason, updateEmployeeEarlyExitReason } from "@/actions/employee/pointages";
 import { startEmployeeBreak, endEmployeeBreak } from "@/actions/employee/breaks";
@@ -39,10 +37,6 @@ interface EmployeeDashboardClientProps {
 	initialBreaks: Break[];
 	isOnLeaveToday?: boolean;
 	incompletePointages?: Pointage[];
-	/** Derniers pointages (14 derniers jours, plus récents d'abord) */
-	recentPointages?: Pointage[];
-	/** Demandes de congé en attente ou à venir */
-	leaveRequests?: Absence[];
 }
 
 
@@ -55,14 +49,11 @@ export default function EmployeeDashboardClient({
 	initialBreaks,
 	isOnLeaveToday = false,
 	incompletePointages = [],
-	recentPointages = [],
-	leaveRequests = [],
 }: EmployeeDashboardClientProps) {
 	const { showSuccess, showInfo, showError, showWarning } = useNotification();
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [currentTime, setCurrentTime] = useState(new Date());
-	const [hasMounted, setHasMounted] = useState(false);
 	const [breaks, setBreaks] = useState<Break[]>(initialBreaks ?? []);
 	const [isOnBreak, setIsOnBreak] = useState(
 		() => (initialBreaks ?? []).some((b) => !b.endTime),
@@ -85,12 +76,7 @@ export default function EmployeeDashboardClient({
 
 
 
-	useEffect(() => {
-		// Use a timer to set hasMounted so the setState call is inside an
-		// external-system callback (timer callback), not synchronously in the body.
-		const id = setTimeout(() => setHasMounted(true), 0);
-		return () => clearTimeout(id);
-	}, []);
+
 
 
 
@@ -495,9 +481,7 @@ export default function EmployeeDashboardClient({
 
 
 
-	const today = new Date();
 
-	const todayISO = today.toISOString().split("T")[0];
 
 
 
@@ -736,10 +720,6 @@ export default function EmployeeDashboardClient({
 		return Math.max(0, elapsed - completedBreakMinutes - onBreakNow);
 	})();
 	const statusTone = isOnLeaveToday ? "bg-muted-foreground" : isOnBreak ? "bg-warning" : isWorking ? "bg-success" : "bg-muted-foreground";
-	const fmtDay = (d: unknown) =>
-		new Date(d as string).toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "short" });
-	const fmtDuration = (min: number | null | undefined) => (min && min > 0 ? formatMinutesHuman(min) : "—");
-	const LEAVE_TYPE: Record<string, string> = { conge: "Congé payé", maladie: "Maladie", autre: "Autre" };
 
 	return (
 	<div className="space-y-6">
@@ -1002,219 +982,108 @@ export default function EmployeeDashboardClient({
 			</div>
 		)}
 
-		<div className="grid gap-4 lg:grid-cols-3">
-			{/* Aujourd'hui */}
-			<Card className="gap-4 py-4 shadow-none lg:col-span-2">
-				<CardHeader className="px-4 sm:px-6">
-					<div className="flex items-center justify-between gap-3">
-						<CardTitle className="text-base font-semibold">Aujourd&apos;hui</CardTitle>
-						<span className="inline-flex items-center gap-2 rounded-full bg-muted px-2.5 py-1 text-xs font-medium">
-							<span className={`size-2 rounded-full ${statusTone}`} aria-hidden="true" />
-							{currentStatusLabel}
-						</span>
-					</div>
-					<CardDescription>{currentStatusDescription}</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-5 px-4 sm:px-6">
-					<dl className="grid grid-cols-3 gap-3">
-						<div className="rounded-lg border border-border p-3">
-							<dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
-								<LogIn className="size-3.5" aria-hidden="true" /> Arrivée
-							</dt>
-							<dd className="tabular mt-1 text-xl font-semibold sm:text-2xl">{todayPointage?.entryTime ?? "—"}</dd>
-						</div>
-						<div className="rounded-lg border border-border p-3">
-							<dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
-								<LogOut className="size-3.5" aria-hidden="true" /> Départ
-							</dt>
-							<dd className="tabular mt-1 text-xl font-semibold sm:text-2xl">{todayPointage?.exitTime ?? "—"}</dd>
-						</div>
-						<div className="rounded-lg border border-border p-3">
-							<dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
-								<Timer className="size-3.5" aria-hidden="true" /> Travail
-							</dt>
-							<dd className="tabular mt-1 text-xl font-semibold sm:text-2xl">
-								{workedMinutes !== null ? formatMinutesHuman(workedMinutes) : "—"}
-							</dd>
-						</div>
-					</dl>
-					<p className="text-xs text-muted-foreground">
-						Horaires prévus : <span className="tabular font-medium text-foreground">{workStartTime} → {workEndTime}</span>
-						{isActive && workedMinutes !== null && " · temps de travail estimé, pauses déduites"}
-						{todayLateDelayLabel && (
-							<> · <span className="font-medium text-warning">retard de {todayLateDelayLabel}</span></>
-						)}
-					</p>
-
-					<div className="flex flex-col gap-2 sm:flex-row">
-						<Button
-							onClick={handlePrimaryCta}
-							disabled={primaryCtaDisabled}
-							variant={(isActive || hasIncompleteSession) ? "destructive" : "default"}
-							className="h-12 flex-1 cursor-pointer text-base font-semibold"
-						>
-							{isPending ? (
-								<>
-									<Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-									Enregistrement…
-								</>
-							) : (
-								primaryCtaLabel
-							)}
-						</Button>
-						{isActive && !isOnLeaveToday && (
-							<Button
-								onClick={isOnBreak ? handleBreakEnd : handleBreakStart}
-								disabled={isPending}
-								variant="outline"
-								className="h-12 cursor-pointer sm:w-56"
-							>
-								<Coffee className="mr-2 size-4" aria-hidden="true" />
-								{isOnBreak ? "Terminer la pause" : "Démarrer une pause"}
-							</Button>
-						)}
-					</div>
-					<p className="tabular text-center text-xs text-muted-foreground" aria-hidden="true">
-						{hasMounted ? currentTime.toLocaleTimeString("fr-FR") : ""}
-					</p>
-
-					{dayActions.length > 0 && (
-						<div>
-							<h3 className="mb-2 text-xs font-medium text-muted-foreground">Chronologie de la journée</h3>
-							<ol className="space-y-1.5 border-l border-border pl-4">
-								{dayActions.map((action: DayAction, index: number) => (
-									<li key={`${action.time}-${index}`} className="relative flex items-center justify-between gap-3 text-sm">
-										<span className="absolute -left-[21px] size-2 rounded-full bg-primary" aria-hidden="true" />
-										<span>{action.label}</span>
-										<span className="tabular text-muted-foreground">{action.time}</span>
-									</li>
-								))}
-							</ol>
-						</div>
-					)}
-				</CardContent>
-			</Card>
-
-			{/* Cette semaine : données réelles issues des pointages */}
-			<section aria-labelledby="week-title" className="space-y-3">
-				<h2 id="week-title" className="text-base font-semibold">Cette semaine</h2>
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1">
-					<StatCard label="Heures travaillées" value={`${weekStats.hours}h`} hint="Du lundi à aujourd'hui" />
-					<StatCard
-						label="Retards"
-						value={weekLates}
-						tone={weekLates > 0 ? "warning" : "neutral"}
-						toneLabel={weekLates > 0 ? "Retard" : undefined}
-						hint={weekLates > 0 ? "Pointages signalés en retard" : "Aucun retard cette semaine"}
-					/>
-					<StatCard label="Heures supplémentaires" value={`${weekOvertime}h`} hint="Au-delà de la durée prévue" />
+		<Card className="mx-auto w-full max-w-2xl gap-4 py-5 shadow-none">
+			<CardHeader className="px-5 sm:px-6">
+				<div className="flex items-center justify-between gap-3">
+					<CardTitle className="text-base font-semibold">Aujourd&apos;hui</CardTitle>
+					<span className="inline-flex items-center gap-2 rounded-full bg-muted px-2.5 py-1 text-xs font-medium">
+						<span className={`size-2 rounded-full ${statusTone}`} aria-hidden="true" />
+						{currentStatusLabel}
+					</span>
 				</div>
-			</section>
-		</div>
-
-		<div className="grid gap-4 lg:grid-cols-3">
-			{/* Historique récent */}
-			<Card className="gap-3 py-4 shadow-none lg:col-span-2">
-				<CardHeader className="px-4 sm:px-6">
-					<div className="flex items-center justify-between gap-3">
-						<div>
-							<CardTitle className="text-base font-semibold">Pointages récents</CardTitle>
-							<CardDescription className="text-xs">Vos derniers jours pointés</CardDescription>
-						</div>
-						<Link href="/mes-pointages" prefetch={false} className="text-xs font-medium text-primary underline-offset-2 hover:underline">
-							Tout voir
-						</Link>
+				<CardDescription>{currentStatusDescription}</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-5 px-5 sm:px-6">
+				<dl className="grid grid-cols-3 gap-3 text-center">
+					<div>
+						<dt className="text-xs text-muted-foreground">Arrivée</dt>
+						<dd className="tabular mt-1 text-2xl font-semibold">{todayPointage?.entryTime ?? "—"}</dd>
 					</div>
-				</CardHeader>
-				<CardContent className="px-0 sm:px-6">
-					{recentPointages.length === 0 ? (
-						<p className="px-4 py-8 text-center text-sm text-muted-foreground">
-							Aucun pointage sur les 14 derniers jours.
-						</p>
-					) : (
-						<>
-							<table className="hidden w-full text-sm sm:table">
-								<thead>
-									<tr className="text-left text-xs text-muted-foreground">
-										<th className="py-2 pr-3 font-medium">Jour</th>
-										<th className="py-2 pr-3 font-medium">Arrivée</th>
-										<th className="py-2 pr-3 font-medium">Départ</th>
-										<th className="py-2 pr-3 text-right font-medium">Durée</th>
-										<th className="py-2 text-right font-medium">Statut</th>
-									</tr>
-								</thead>
-								<tbody>
-									{recentPointages.map((p) => (
-										<tr key={p.id} className="h-11 border-t border-border">
-											<td className="pr-3 first-letter:uppercase">
-												{fmtDay(p.date)}
-												{(p.sessionNumber ?? 1) > 1 && <span className="ml-1 text-xs text-muted-foreground">· session {p.sessionNumber}</span>}
-											</td>
-											<td className="tabular pr-3">{p.entryTime ?? "—"}</td>
-											<td className="tabular pr-3">{p.exitTime ?? "—"}</td>
-											<td className="tabular pr-3 text-right">{fmtDuration(p.duration)}</td>
-											<td className="text-right"><StatusBadge status={p.status} /></td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-							<ul className="divide-y divide-border sm:hidden">
-								{recentPointages.map((p) => (
-									<li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3">
-										<div className="min-w-0">
-											<p className="text-sm font-medium first-letter:uppercase">{fmtDay(p.date)}</p>
-											<p className="tabular text-xs text-muted-foreground">
-												{p.entryTime ?? "—"} → {p.exitTime ?? "—"} · {fmtDuration(p.duration)}
-											</p>
-										</div>
-										<StatusBadge status={p.status} />
-									</li>
-								))}
-							</ul>
-						</>
+					<div>
+						<dt className="text-xs text-muted-foreground">Départ</dt>
+						<dd className="tabular mt-1 text-2xl font-semibold">{todayPointage?.exitTime ?? "—"}</dd>
+					</div>
+					<div>
+						<dt className="text-xs text-muted-foreground">Temps de travail</dt>
+						<dd className="tabular mt-1 text-2xl font-semibold">
+							{workedMinutes !== null ? formatMinutesHuman(workedMinutes) : "—"}
+						</dd>
+					</div>
+				</dl>
+
+				<div className="flex flex-col gap-2 sm:flex-row">
+					<Button
+						onClick={handlePrimaryCta}
+						disabled={primaryCtaDisabled}
+						variant={(isActive || hasIncompleteSession) ? "destructive" : "default"}
+						className="h-12 flex-1 cursor-pointer text-base font-semibold"
+					>
+						{isPending ? (
+							<>
+								<Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+								Enregistrement…
+							</>
+						) : (
+							primaryCtaLabel
+						)}
+					</Button>
+					{isActive && !isOnLeaveToday && (
+						<Button
+							onClick={isOnBreak ? handleBreakEnd : handleBreakStart}
+							disabled={isPending}
+							variant="outline"
+							className="h-12 cursor-pointer sm:w-52"
+						>
+							<Coffee className="mr-2 size-4" aria-hidden="true" />
+							{isOnBreak ? "Terminer la pause" : "Démarrer une pause"}
+						</Button>
 					)}
-				</CardContent>
-			</Card>
+				</div>
 
-			{/* Congés et demandes */}
-			<Card className="gap-3 py-4 shadow-none">
-				<CardHeader className="px-4">
-					<div className="flex items-center justify-between gap-3">
-						<div>
-							<CardTitle className="text-base font-semibold">Congés et demandes</CardTitle>
-							<CardDescription className="text-xs">En attente ou à venir</CardDescription>
-						</div>
-						<Link href="/mes-conges" prefetch={false} className="text-xs font-medium text-primary underline-offset-2 hover:underline">
-							Gérer
-						</Link>
-					</div>
-				</CardHeader>
-				<CardContent className="px-4">
-					{leaveRequests.length === 0 ? (
-						<p className="py-6 text-center text-sm text-muted-foreground">
-							Aucune demande en cours.{" "}
-							<Link href="/mes-conges" prefetch={false} className="font-medium text-primary underline-offset-2 hover:underline">
-								Faire une demande
-							</Link>
-						</p>
-					) : (
-						<ul className="divide-y divide-border">
-							{leaveRequests.map((a) => (
-								<li key={a.id} className="space-y-1 py-3 first:pt-0 last:pb-0">
-									<div className="flex items-center justify-between gap-2">
-										<span className="text-sm font-medium">{LEAVE_TYPE[a.type] ?? a.type}</span>
-										<StatusBadge status={a.status as "pending" | "approved"} />
-									</div>
-									<p className="tabular text-xs text-muted-foreground">
-										{new Date(a.startDate as unknown as string).toLocaleDateString("fr-FR")} → {new Date(a.endDate as unknown as string).toLocaleDateString("fr-FR")}
-									</p>
+				<p className="text-center text-xs text-muted-foreground">
+					Horaires prévus <span className="tabular font-medium text-foreground">{workStartTime} → {workEndTime}</span>
+					{todayLateDelayLabel && (
+						<> · <span className="font-medium text-warning">retard de {todayLateDelayLabel}</span></>
+					)}
+				</p>
+
+				{dayActions.length > 0 && (
+					<details className="group border-t border-border pt-3 text-sm">
+						<summary className="cursor-pointer select-none text-xs font-medium text-muted-foreground hover:text-foreground">
+							Chronologie de la journée
+						</summary>
+						<ol className="mt-3 space-y-1.5 border-l border-border pl-4">
+							{dayActions.map((action: DayAction, index: number) => (
+								<li key={`${action.time}-${index}`} className="relative flex items-center justify-between gap-3">
+									<span className="absolute -left-[21px] size-2 rounded-full bg-primary" aria-hidden="true" />
+									<span>{action.label}</span>
+									<span className="tabular text-muted-foreground">{action.time}</span>
 								</li>
 							))}
-						</ul>
-					)}
-				</CardContent>
-			</Card>
-		</div>
+						</ol>
+					</details>
+				)}
+			</CardContent>
+		</Card>
+
+		<p className="text-center text-sm text-muted-foreground">
+			Cette semaine :{" "}
+			<span className="tabular font-medium text-foreground">{weekStats.hours}h</span> travaillées
+			{" · "}
+			<span className={`tabular font-medium ${weekLates > 0 ? "text-warning" : "text-foreground"}`}>
+				{weekLates} retard{weekLates > 1 ? "s" : ""}
+			</span>
+			{weekOvertime > 0 && (
+				<>
+					{" · "}
+					<span className="tabular font-medium text-foreground">{weekOvertime}h</span> supplémentaires
+				</>
+			)}
+			{" — "}
+			<Link href="/mes-pointages" prefetch={false} className="font-medium text-primary underline-offset-2 hover:underline">
+				voir mes pointages
+			</Link>
+		</p>
 	</div>
 	);
 }

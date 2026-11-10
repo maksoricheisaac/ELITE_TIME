@@ -48,13 +48,7 @@ export default async function AppDashboardPage() {
   const todayEnd = new Date(todayStart);
   todayEnd.setHours(23, 59, 59, 999);
 
-  // Historique récent : 14 derniers jours (affichage des 7 derniers jours pointés)
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const dayKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const historyFrom = new Date(todayStart);
-  historyFrom.setDate(historyFrom.getDate() - 14);
-
-  const [todayPointage, weekStats, systemSettings, todayBreaks, todayLeaveAbsences, incompletePointages, recentPointagesRaw] =
+  const [todayPointage, weekStats, systemSettings, todayBreaks, todayLeaveAbsences, incompletePointages] =
     await Promise.all([
       getEmployeeTodayPointage(user.id) as Promise<Pointage | null>,
       getEmployeeWeekStats(user.id) as Promise<{ hours: number; lates: number; overtime: number }>,
@@ -62,18 +56,7 @@ export default async function AppDashboardPage() {
       getEmployeeTodayBreaks(user.id) as Promise<Break[]>,
       serverGet<Absence[]>(`/absences?userId=${user.id}`),
       getEmployeeIncompletePointages(user.id) as Promise<Pointage[]>,
-      serverGet<Pointage[]>(`/pointages?userId=${user.id}&from=${dayKey(historyFrom)}&to=${dayKey(todayEnd)}`),
     ]);
-
-  const recentPointages = [...(recentPointagesRaw ?? [])]
-    .sort((a, b) => new Date(b.date as unknown as string).getTime() - new Date(a.date as unknown as string).getTime() || (b.sessionNumber ?? 1) - (a.sessionNumber ?? 1))
-    .slice(0, 8);
-
-  // Demandes à venir ou en cours (en attente / approuvées non terminées)
-  const leaveRequests = (todayLeaveAbsences ?? [])
-    .filter((a) => (a.status === "pending" || a.status === "approved") && new Date(a.endDate as unknown as string) >= todayStart)
-    .sort((a, b) => new Date(a.startDate as unknown as string).getTime() - new Date(b.startDate as unknown as string).getTime())
-    .slice(0, 4);
 
   const todayLeave =
     (todayLeaveAbsences ?? []).find((a) => {
@@ -93,8 +76,6 @@ export default async function AppDashboardPage() {
       initialBreaks={todayBreaks as Break[]}
       isOnLeaveToday={Boolean(todayLeave)}
       incompletePointages={incompletePointages as Pointage[]}
-      recentPointages={recentPointages}
-      leaveRequests={leaveRequests}
     />
   );
 }
