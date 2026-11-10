@@ -19,8 +19,16 @@ export async function updateEmployee(formData: FormData) {
   });
 }
 
-export async function syncEmployeesFromLdap() {
-  await serverPost("/ldap/sync");
+export async function syncEmployeesFromLdap(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await serverPost("/ldap/sync");
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Synchronisation impossible",
+    };
+  }
 }
 
 export async function adminSoftDeleteEmployee(userId: string) {

@@ -14,21 +14,21 @@
   --brand-100: #d9e8f5;
   --brand-50: #eef5fb;
 
-  --background: #f6f8fb;
+  --background: #e9f1fb;
   --foreground: #0f172a;
   --radius: 0.5rem;
-  --card: #ffffff;
+  --card: #fbfdff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
   --primary: var(--brand-700);
   --primary-foreground: #ffffff;
   --primary-accent: var(--chart-1);
-  --secondary: #eef1f5;
+  --secondary: #dfeaf8;
   --secondary-foreground: #0f172a;
-  --muted: #eef1f5;
-  --muted-foreground: #5b6b80;
-  --accent: var(--brand-50);
+  --muted: #e3ecf8;
+  --muted-foreground: #4f627a;
+  --accent: #d6e8fa;
   --accent-foreground: var(--brand-700);
   --destructive: #b42318;
   --destructive-foreground: #ffffff;
@@ -36,33 +36,33 @@
   /* Sémantique : texte/icône (>= 4,5:1 sur blanc) + fond doux */
   --success: #0e7a4f;
   --success-foreground: #ffffff;
-  --success-soft: #e7f5ee;
+  --success-soft: #cdf0de;
   --warning: #b45309;
   --warning-foreground: #ffffff;
-  --warning-soft: #fef3c7;
+  --warning-soft: #fde9a8;
   --danger: #b42318;
-  --danger-soft: #fdecea;
+  --danger-soft: #fcd5d0;
   --info: #0b6aa2;
   --info-foreground: #ffffff;
-  --info-soft: #e6f2fa;
-  --neutral-soft: #eef1f5;
+  --info-soft: #c9e4f7;
+  --neutral-soft: #dde6f1;
 
-  --border: #e3e8ef;
-  --input: #e3e8ef;
+  --border: #c9d9ec;
+  --input: #c9d9ec;
   --ring: var(--brand-700);
 
   /* Graphiques : présents = marque, absents = gris, retards = ambre */
   --chart-1: #205890;
-  --chart-2: #3098d0;
-  --chart-3: #b45309;
-  --chart-4: #5b6b80;
-  --chart-5: #0e7a4f;
+  --chart-2: #1fa3e0;
+  --chart-3: #e08a00;
+  --chart-4: #7c5cd6;
+  --chart-5: #0e9f6e;
 
-  /* Sidebar claire : le logo bleu y reste lisible */
-  --sidebar: #ffffff;
-  --sidebar-foreground: #334155;
-  --sidebar-border: #e3e8ef;
-  --sidebar-accent: var(--brand-50);
+  /* Sidebar teintée : le logo bleu y reste lisible */
+  --sidebar: #dbe9f9;
+  --sidebar-foreground: #26394f;
+  --sidebar-border: #bcd1ea;
+  --sidebar-accent: #c3dbf5;
   --sidebar-accent-foreground: var(--brand-700);
   --sidebar-ring: var(--brand-700);
 
@@ -177,7 +177,12 @@
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(900px 500px at 100% -10%, rgb(48 152 208 / 0.22), transparent 60%),
+    radial-gradient(700px 500px at -10% 20%, rgb(124 92 214 / 0.12), transparent 60%),
+    radial-gradient(800px 500px at 60% 110%, rgb(14 159 110 / 0.12), transparent 60%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-feature-settings: "cv11", "ss01", "tnum" 0;
   -webkit-font-smoothing: antialiased;

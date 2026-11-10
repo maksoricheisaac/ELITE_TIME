@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +51,7 @@ interface EmployeesTableProps {
   departments: DepartmentOption[];
   positions: PositionWithDepartment[];
   onUpdateEmployee: (formData: FormData) => void;
-  onSyncFromLdap: () => Promise<void> | void;
+  onSyncFromLdap: () => Promise<{ ok: boolean; error?: string } | void> | void;
   onSoftDeleteEmployee: (userId: string) => Promise<void> | void;
   onToggleIncludeInReports: (userId: string, include: boolean) => Promise<void> | void;
 }
@@ -560,7 +561,14 @@ export default function EmployeesTable({
             className="cursor-pointer w-full sm:w-auto"
             onClick={() =>
               startSyncTransition(async () => {
-                await onSyncFromLdap();
+                const res = await onSyncFromLdap();
+                if (res && !res.ok) {
+                  toast.error(
+                    `Synchronisation Active Directory échouée : ${res.error ?? "erreur serveur"}`,
+                  );
+                } else {
+                  router.refresh();
+                }
               })
             }
           >
