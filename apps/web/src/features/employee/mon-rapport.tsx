@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Pointage, Absence } from "@/types/models";
 import { PageHeader } from "@/components/ui/page-header";
@@ -39,7 +39,7 @@ const CAL_STYLE: Record<CalendarKind, { cls: string; label: string }> = {
   future: { cls: "bg-transparent text-muted-foreground/50 border-border border-dashed", label: "À venir" },
 };
 
-const MAX_CALENDAR_DAYS = 93;
+const MAX_CALENDAR_DAYS = 366;
 
 export default function MonRapportClient({
   pointages,
@@ -192,17 +192,26 @@ export default function MonRapportClient({
   }, [resolvedFrom, resolvedTo]);
 
   // Calendrier en semaines (lundi → dimanche)
+  const calendar = stats.calendar;
   const weeks = useMemo(() => {
-    if (stats.calendar.length === 0 || stats.calendar.length > MAX_CALENDAR_DAYS) return [];
-    const cells: ((typeof stats.calendar)[number] | null)[] = [];
-    const lead = (stats.calendar[0].date.getDay() + 6) % 7;
+    if (calendar.length === 0 || calendar.length > MAX_CALENDAR_DAYS) return [];
+    const cells: ((typeof calendar)[number] | null)[] = [];
+    const lead = (calendar[0].date.getDay() + 6) % 7;
     for (let i = 0; i < lead; i++) cells.push(null);
-    cells.push(...stats.calendar);
+    cells.push(...calendar);
     while (cells.length % 7 !== 0) cells.push(null);
-    const rows: typeof cells[] = [];
+    const rows: (typeof cells)[] = [];
     for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
     return rows;
-  }, [stats.calendar]);
+  }, [calendar]);
+
+  // La hauteur du calendrier est plafonnée : une longue période défile dans la carte
+  // (positionnée sur la semaine la plus récente) au lieu de repousser le contenu.
+  const calScroll = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = calScroll.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [weeks]);
 
   const fmtDay = (key: string) =>
     new Date(`${key}T00:00:00`).toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "short" });
@@ -260,12 +269,12 @@ export default function MonRapportClient({
           />
         </div>
 
-        <Card className="gap-3 py-4 shadow-none">
+        <Card className="max-h-[22.5rem] gap-3 py-4 shadow-none">
           <CardHeader className="px-4">
             <CardTitle className="text-base font-semibold">Calendrier de la période</CardTitle>
             <CardDescription className="text-xs">Statut de chaque jour ouvré</CardDescription>
           </CardHeader>
-          <CardContent className="px-4">
+          <CardContent className="flex min-h-0 flex-1 flex-col px-4">
             {weeks.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">
                 {stats.calendar.length === 0
@@ -274,12 +283,13 @@ export default function MonRapportClient({
               </p>
             ) : (
               <>
-                <div role="grid" aria-label="Calendrier de la période" className="space-y-1">
-                  <div role="row" className="grid grid-cols-7 gap-1 text-center text-[11px] text-muted-foreground">
+                <div role="grid" aria-label="Calendrier de la période" className="flex min-h-0 flex-1 flex-col gap-1">
+                  <div role="row" className="grid shrink-0 grid-cols-7 gap-1 text-center text-[11px] text-muted-foreground">
                     {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => (
                       <span key={i} role="columnheader">{d}</span>
                     ))}
                   </div>
+                  <div ref={calScroll} className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
                   {weeks.map((week, wi) => (
                     <div key={wi} role="row" className="grid grid-cols-7 gap-1">
                       {week.map((c, ci) =>
@@ -289,7 +299,7 @@ export default function MonRapportClient({
                             role="gridcell"
                             title={`${fmtDay(c.key)} : ${CAL_STYLE[c.kind].label}`}
                             aria-label={`${fmtDay(c.key)} : ${CAL_STYLE[c.kind].label}`}
-                            className={`tabular flex aspect-square items-center justify-center rounded-md border text-xs ${CAL_STYLE[c.kind].cls}`}
+                            className={`tabular flex h-8 items-center justify-center rounded-md border text-xs ${CAL_STYLE[c.kind].cls}`}
                           >
                             <span className="flex flex-col items-center leading-none">
                               {c.date.getDate()}
@@ -306,8 +316,9 @@ export default function MonRapportClient({
                       )}
                     </div>
                   ))}
+                  </div>
                 </div>
-                <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <ul className="mt-2 grid shrink-0 grid-cols-3 gap-x-2 gap-y-1 border-t border-border pt-2 text-[11px] text-muted-foreground">
                   {(["normal", "late", "incomplete", "leave", "absent"] as CalendarKind[]).map((k) => (
                     <li key={k} className="flex items-center gap-1.5">
                       <span className={`size-3 rounded-sm border ${CAL_STYLE[k].cls}`} aria-hidden="true" />
